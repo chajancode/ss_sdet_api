@@ -8,45 +8,28 @@ from models.posts.posts_model import (
                         PostDeletedResponse
                     )
 from models.posts.posts_service_response_model import (
-                        CommentsServiceResponse,
-                        PostsServiceDeleteResponse
+                        PostsServiceDeleteResponse,
+                        PostsServiceResponse
                     )
 from services.base_service import BaseService
+from utils.tuple_converter import tuple_to_post_model
 # from utils.tuple_converter import tuple_to_model
 
 
-class PostsService(BaseService):
+class PostsService(BaseService[PostsDao]):
     def __init__(self, auth_data: dict, dao: PostsDao = PostsDao()) -> None:
         super().__init__(auth_data, wpe.POSTS_ENDPOINT, dao)
-    # def __init__(self, auth_data: dict, dao: PostsDao = PostsDao()) -> None:
-    #     self.auth = HTTPBasicAuth(**auth_data)
-    #     self.client = APIClient(wpe.POSTS_ENDPOINT, self.auth)
-    #     self._last_created_id = None
-    #     self.dao = dao
 
-    # def create(self, test_data):
-    #     response = self.client.post(test_data, PostCreatedOrPatchedResponse)
-
-    #     if response.status_code == 201:
-    #         self._last_created_id = response.response_body.id
-    #     return response
-
-    # def patch(self, id, test_data):
-    #     return self.client.patch(id, test_data, PostCreatedOrPatchedResponse)
-
-    # def delete(self, id, test_data):
-    #     return self.client.delete(id, test_data, PostDeletedResponse)
-
-    # def _get_db_record(self, post_id: int | None):
-    #     if post_id is None:
-    #         return None
-    #     return tuple_to_model(
-    #         *self.dao.get_post_by_id(post_id)
-    #     )  # type: ignore
+    def _get_db_record(self, comment_id: int | None):
+        if comment_id is None:
+            return None
+        return tuple_to_post_model(
+            *self.dao.get_post_by_id(comment_id)
+        )  # type: ignore
 
     def check_post_creation(self, test_data: dict):
         response = self.create(test_data, PostCreatedOrPatchedResponse)
-        return CommentsServiceResponse(
+        return PostsServiceResponse(
             status_code=response.status_code,
             response_body=response.response_body,
             db_record=self._get_db_record(self._last_created_id)
@@ -56,7 +39,7 @@ class PostsService(BaseService):
         response = self.patch(
             self._last_created_id, test_data, PostCreatedOrPatchedResponse
         )
-        return CommentsServiceResponse(
+        return PostsServiceResponse(
             status_code=response.status_code,
             response_body=response.response_body,
             db_record=self._get_db_record(self._last_created_id)

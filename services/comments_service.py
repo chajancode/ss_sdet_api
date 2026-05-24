@@ -18,25 +18,6 @@ class CommentsService(BaseService[CommentsDao]):
             ) -> None:
         super().__init__(auth_data, wpe.COMMENTS_ENDPOINT, dao)
 
-    # def create(self, test_data):
-    #     response = self.client.post(test_data, PostCreatedOrPatchedResponse)
-
-    #     if response.status_code == 201:
-    #         self._last_created_id = response.response_body.id
-    #     return response
-
-    # def patch(self, id, test_data):
-    #     return self.client.patch(id, test_data, PostCreatedOrPatchedResponse)
-
-    # def delete(self, id, test_data):
-    #     return self.client.delete(id, test_data, PostDeletedResponse)
-
-    # def _get_db_record(self, post_id: int | None):
-    #     if post_id is None:
-    #         return None
-    #     return tuple_to_model(
-    #         *self.dao.get_post_by_id(post_id)
-    #     )  # type: ignore
     def _get_db_record(self, comment_id: int | None):
         if comment_id is None:
             return None
