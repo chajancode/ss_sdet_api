@@ -1,4 +1,5 @@
-from models.db_record_model import DBPostData
+from models.comments.db_record_model import DBCommentData
+from models.posts.db_record_model import DBPostData
 
 
 def tuples_to_models(data: list) -> list[DBPostData] | None:
@@ -10,7 +11,7 @@ def tuples_to_models(data: list) -> list[DBPostData] | None:
     return None
 
 
-def tuple_to_model(data: tuple | None) -> DBPostData | None:
+def tuple_to_post_model(data: tuple | None) -> DBPostData | None:
     print(f'!!!!!!!!{data}')
     if data:
         t, c, s = data
@@ -20,4 +21,15 @@ def tuple_to_model(data: tuple | None) -> DBPostData | None:
             status=s
         )
         return post_from_db
+    return None
+
+
+def tuple_to_comm_model(data: tuple | None) -> DBCommentData | None:
+    if data:
+        p, c = data
+        comm_from_db = DBCommentData(
+            post=p,
+            content=c
+        )
+        return comm_from_db
     return None

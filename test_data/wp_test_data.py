@@ -10,3 +10,13 @@ posts_test_data_patch = {
 posts_test_data_delete = {
     "force": True
 }
+comms_test_data_create = {
+    "content": "камент, созданный посредством POST-запроса",
+    "post": 93
+    }
+comms_test_data_patch = {
+    "content": "отредактированный камент"
+}
+comms_test_data_delete = {
+    "force": True
+}

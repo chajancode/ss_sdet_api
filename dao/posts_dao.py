@@ -1,10 +1,7 @@
-from database import db
-from database import Database
+from dao.base_dao import BaseDao
 
 
-class PostsDao:
-    def __init__(self, database: Database = db) -> None:
-        self.db = database
+class PostsDao(BaseDao):
 
     def get_post_by_id(self, id: int) -> list[tuple | None]:
         query = """

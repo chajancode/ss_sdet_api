@@ -2,8 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from models.db_record_model import DBPostData
-from models.posts_model import (
+from models.posts.db_record_model import DBPostData
+from models.posts.posts_model import (
     PostCreatedOrPatchedResponse,
     PostDeletedResponse
     )

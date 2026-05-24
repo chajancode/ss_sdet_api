@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from requests import Session
 from requests.auth import HTTPBasicAuth
 
-from models.api_responses_models import FullAPIResponse
+from models.posts.api_responses_models import FullAPIResponse
 
 M = TypeVar('M', bound=BaseModel)
 
@@ -31,6 +31,12 @@ class APIClient:
                 json=data,
                 auth=self.auth,
         )
+        if response.status_code >= 400:
+            raise RuntimeError(
+                f'Ошибка при выполнении запроса. '
+                f'Статус-код {response.status_code}. '
+                f'Тело ответа: {response.text}'
+                )
         parsed_body = response_model(**response.json())
         return FullAPIResponse[M](
                 status_code=response.status_code,
