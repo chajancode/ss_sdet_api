@@ -1,7 +1,12 @@
-from typing import Any, Optional
+from typing import Optional, Type, TypeVar
 
+from pydantic import BaseModel
 from requests import Session
 from requests.auth import HTTPBasicAuth
+
+from models.api_responses_models import FullAPIResponse
+
+M = TypeVar('M', bound=BaseModel)
 
 
 class APIClient:
@@ -11,58 +16,63 @@ class APIClient:
         self.auth = auth
 
     def _request(
-            self,
-            method: str,
-            url: str,
-            id: Optional[int] = None,
-            data: Optional[dict] = None,
-    ) -> dict[str, Any]:
-        if id:
-            url = f'{self.endpoint}/{id}'
+                self,
+                method: str,
+                response_model: Type[M],
+                id: Optional[int] = None,
+                data: Optional[dict] = None,
+    ) -> FullAPIResponse[M]:
+
+        url = f'{self.endpoint}/{id}' if id else self.endpoint
 
         response = self.session.request(
-            method=method,
-            url=url,
-            json=data,
-            auth=self.auth
+                method=method,
+                url=url,
+                json=data,
+                auth=self.auth,
         )
-        return {
-            'status_code': response.status_code,
-            'response_body': response.json()
-        }
+        parsed_body = response_model(**response.json())
+        return FullAPIResponse[M](
+                status_code=response.status_code,
+                response_body=parsed_body
+        )
 
     def post(
-        self,
-        data: dict,
-    ) -> dict[str, dict]:
+                self,
+                data: dict,
+                response_model: Type[M]
+    ) -> FullAPIResponse[M]:
 
         return self._request(
-            method='POST',
-            url=self.endpoint,
-            data=data
+                method='POST',
+                data=data,
+                response_model=response_model
+
         )
 
     def patch(
-            self,
-            id: int,
-            data: dict,
-    ) -> dict[str, dict]:
+                self,
+                id: int,
+                data: dict,
+                response_model: Type[M]
+    ) -> FullAPIResponse[M]:
 
         return self._request(
-            method='PATCH',
-            url=self.endpoint,
-            id=id,
-            data=data
+                method='PATCH',
+                id=id,
+                data=data,
+                response_model=response_model,
         )
 
     def delete(
-            self,
-            id: int,
-            data: dict,
-    ) -> dict[str, dict]:
+                self,
+                id: int,
+                data: dict,
+                response_model: Type[M]
+    ) -> FullAPIResponse[M]:
         return self._request(
-            method='DELETE',
-            url=self.endpoint,
-            id=id,
-            data=data
+                method='DELETE',
+                id=id,
+                data=data,
+                response_model=response_model,
         )
