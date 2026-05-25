@@ -28,7 +28,7 @@ class CommentsService(BaseService[CommentsDao]):
         умолчанию создаётся новый экземпляр CommentsDao.
     """
     def __init__(
-            self, auth_data: dict, dao: CommentsDao = CommentsDao()
+            self, auth_data: dict, dao: CommentsDao
             ) -> None:
         """
         Инициализирует сервис комментариев.

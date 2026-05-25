@@ -25,7 +25,7 @@ class PostsService(BaseService[PostsDao]):
         dao (PostsDao): DAO для доступа к таблице постов. По умолчанию
             создаётся новый экземпляр PostsDao.
     """
-    def __init__(self, auth_data: dict, dao: PostsDao = PostsDao()) -> None:
+    def __init__(self, auth_data: dict, dao: PostsDao) -> None:
         """
         Инициализирует сервис постов.
 

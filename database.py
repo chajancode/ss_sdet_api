@@ -1,6 +1,6 @@
 from typing import Optional
 
-from config.db_config import db_settings, create_mysql_connection
+from config.db_config import create_mysql_connection
 
 
 class Database():
@@ -63,6 +63,3 @@ class Database():
                 cursor.execute(query, params or ())
                 conn.commit()
                 return cursor.rowcount
-
-
-db = Database(db_settings)

@@ -1,4 +1,4 @@
-from database import db
+
 from database import Database
 
 
@@ -12,7 +12,7 @@ class BaseDao:
     Attributes:
         db (Database): Объект для взаимодействия с БД.
     """
-    def __init__(self, database: Database = db) -> None:
+    def __init__(self, database: Database) -> None:
         """
         Инициализирует базовый DAO.
 
