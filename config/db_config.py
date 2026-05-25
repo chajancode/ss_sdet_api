@@ -30,7 +30,7 @@ def create_mysql_connection(db_settings: DBSettings):
 
     Args:
         db_settings(BaseSettings): экземпляр класса pydantic-settings
-        BaseSettings
+            BaseSettings
     """
     try:
         connection = mysql.connector.connect(

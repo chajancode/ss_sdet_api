@@ -67,18 +67,19 @@ class APIClient:
         url = f'{self.endpoint}/{id}' if id else self.endpoint
 
         response = self.session.request(
-                method=method,
-                url=url,
-                json=data,
-                auth=self.auth,
+            method=method,
+            url=url,
+            json=data,
+            auth=self.auth,
         )
-        if response.status_code >= 400:
-            raise RuntimeError(
-                f'Ошибка при выполнении запроса. '
-                f'Статус-код {response.status_code}. '
-                f'Тело ответа: {response.text}'
-                )
-        parsed_body = response_model(**response.json())
+        if 200 <= response.status_code < 300:
+            try:
+                parsed_body = response_model(**response.json())
+            except Exception as e:
+                raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
+        else:
+            parsed_body = None
+
         return FullAPIResponse[M](
                 status_code=response.status_code,
                 response_body=parsed_body

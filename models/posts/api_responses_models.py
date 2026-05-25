@@ -7,4 +7,4 @@ T = TypeVar('T', bound=BaseModel)
 
 class FullAPIResponse(BaseModel, Generic[T]):
     status_code: int
-    response_body: T
+    response_body: T | None

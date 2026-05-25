@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -17,5 +17,5 @@ class PostsServiceResponse(BaseModel):
 
 class PostsServiceDeleteResponse(BaseModel):
     status_code: int
-    response_body: PostDeletedResponse
-    db_record: DBPostData | Any
+    response_body: Optional[PostDeletedResponse] = None
+    db_record: Optional[DBPostData] = None

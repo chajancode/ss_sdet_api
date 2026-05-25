@@ -2,34 +2,24 @@ from models.comments.db_record_model import DBCommentData
 from models.posts.db_record_model import DBPostData
 
 
-def tuples_to_models(data: list) -> list[DBPostData] | None:
-    if data:
-        posts_from_db = [
-            DBPostData(title=t, content=c, status=s) for (t, c, s) in data
-        ]
-        return posts_from_db
-    return None
-
-
-def tuple_to_post_model(data: tuple | None) -> DBPostData | None:
-    print(f'!!!!!!!!{data}')
-    if data:
+def tuple_to_post_model(data) -> DBPostData | None:
+    if not data:
+        return None
+    if isinstance(data, (list, tuple)) and len(data) == 1:
+        data = data[0]
+    if isinstance(data, (list, tuple)) and len(data) >= 3:
         t, c, s = data
-        post_from_db = DBPostData(
-            title=t,
-            content=c,
-            status=s
-        )
-        return post_from_db
+        return DBPostData(title=t, content=c, status=s)
     return None
 
 
-def tuple_to_comm_model(data: tuple | None) -> DBCommentData | None:
-    if data:
+def tuple_to_comm_model(data) -> DBCommentData | None:
+    if not data:
+        return None
+    if isinstance(data, (list, tuple)) and len(data) == 1 and \
+            isinstance(data[0], (list, tuple)):
+        data = data[0]
+    if isinstance(data, (list, tuple)) and len(data) == 2:
         p, c = data
-        comm_from_db = DBCommentData(
-            post=p,
-            content=c
-        )
-        return comm_from_db
+        return DBCommentData(post=p, content=c)
     return None

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -17,5 +17,5 @@ class CommentsServiceResponse(BaseModel):
 
 class CommentsServiceDeleteResponse(BaseModel):
     status_code: int
-    response_body: CommentDeletedResponse
-    db_record: DBCommentData | Any
+    response_body: Optional[CommentDeletedResponse] = None
+    db_record: Optional[DBCommentData] = None

@@ -55,7 +55,7 @@ class CommentsService(BaseService[CommentsDao]):
         if comment_id is None:
             return None
         return tuple_to_comm_model(
-            *self.dao.get_comment_by_id(comment_id)
+            self.dao.get_comment_by_id(comment_id)
         )
 
     def check_comment_creation(self, test_data: dict):
@@ -78,7 +78,7 @@ class CommentsService(BaseService[CommentsDao]):
 
         return CommentsServiceResponse(
             status_code=response.status_code,
-            response_body=response.response_body,
+            response_body=response.response_body,  # type: ignore
             db_record=self._get_db_record(self._last_created_id)
         )
 
@@ -106,7 +106,7 @@ class CommentsService(BaseService[CommentsDao]):
 
         return CommentsServiceResponse(
             status_code=response.status_code,
-            response_body=response.response_body,
+            response_body=response.response_body,  # type: ignore
             db_record=self._get_db_record(self._last_created_id)
         )
 
@@ -131,7 +131,7 @@ class CommentsService(BaseService[CommentsDao]):
             CommentDeletedResponse
         )
 
-        db_record = self.dao.get_comment_by_id(
+        db_record = self._get_db_record(
             self._last_created_id
             ) if self._last_created_id else None
         return CommentsServiceDeleteResponse(

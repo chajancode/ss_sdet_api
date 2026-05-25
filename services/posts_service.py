@@ -51,9 +51,10 @@ class PostsService(BaseService[PostsDao]):
         """
         if post_id is None:
             return None
-        return tuple_to_post_model(
-            *self.dao.get_post_by_id(post_id)
-        )
+        record = self.dao.get_post_by_id(post_id)
+        if record is None:
+            return None
+        return tuple_to_post_model(record)
 
     def check_post_creation(self, test_data: dict):
         """
@@ -75,7 +76,7 @@ class PostsService(BaseService[PostsDao]):
         response = self.create(test_data, PostCreatedOrPatchedResponse)
         return PostsServiceResponse(
             status_code=response.status_code,
-            response_body=response.response_body,
+            response_body=response.response_body,  # type: ignore
             db_record=self._get_db_record(self._last_created_id)
         )
 
@@ -102,7 +103,7 @@ class PostsService(BaseService[PostsDao]):
         )
         return PostsServiceResponse(
             status_code=response.status_code,
-            response_body=response.response_body,
+            response_body=response.response_body,  # type: ignore
             db_record=self._get_db_record(self._last_created_id)
         )
 
@@ -126,7 +127,7 @@ class PostsService(BaseService[PostsDao]):
             test_data,
             PostDeletedResponse
         )
-        db_record = self.dao.get_post_by_id(
+        db_record = self._get_db_record(
             self._last_created_id
             ) if self._last_created_id else None
         return PostsServiceDeleteResponse(
