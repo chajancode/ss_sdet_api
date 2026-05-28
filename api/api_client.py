@@ -39,6 +39,7 @@ class APIClient:
                 response_model: Type[M],
                 id: Optional[int] = None,
                 data: Optional[dict] = None,
+                params: Optional[dict] = None
     ) -> FullAPIResponse[M]:
         """
         Выполняет HTTP-запрос и обрабатывает ответ.
@@ -70,6 +71,7 @@ class APIClient:
             method=method,
             url=url,
             json=data,
+            params=params,
             auth=self.auth,
         )
         if 200 <= response.status_code < 300:
@@ -156,3 +158,58 @@ class APIClient:
                 data=data,
                 response_model=response_model,
         )
+
+    def get_one(
+        self,
+        id: int,
+        response_model: Type[M],
+        params: Optional[dict] = None,
+    ) -> FullAPIResponse[M]:
+        """
+        Выполняет GET-запрос для получения одного объеута по ID.
+
+        Args:
+            id (int): Идентификатор записи.
+            response_model (BaseModel): Pydantic-модель для тела ответа.
+            params: Дополнительные параметры.
+
+        Returns:
+            FullAPIResponse[M]: Ответ с кодом статуса и десериализованным \
+                телом.
+        """
+        return self._request(
+            method='GET',
+            id=id,
+            params=params,
+            response_model=response_model,
+        )
+
+    def get_list(
+        self,
+        response_model: Type[M],
+        params: Optional[dict] = None,
+    ) -> tuple[int, list[M]]:
+        """
+        Выполняет GET-запрос для получения списка записей.
+
+        Args:
+            response_model (BaseModel): Pydantic-модель одного элемента \
+                списка.
+            params: Параметры запроса.
+
+        Returns:
+            tuple (status_code, list[M])
+        """
+        url = self.endpoint
+        response = self.session.request(
+            method='GET',
+            url=url,
+            params=params,
+            auth=self.auth,
+        )
+        if 200 <= response.status_code < 300:
+            adapter = TypeAdapter(list[response_model])  # type: ignore
+            parsed_body = adapter.validate_python(response.json())
+            return response.status_code, parsed_body
+        else:
+            return response.status_code, []
