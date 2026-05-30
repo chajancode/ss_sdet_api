@@ -1,5 +1,10 @@
+from typing import Type, TypeVar
+
+from pydantic import BaseModel
+
 from api.endpoints import WordPressEndpoints as wpe
 from dao.posts_dao import PostsDao
+from models.posts.api_responses_models import FullAPIResponse
 from models.posts.posts_model import (
                         PostCreatedOrPatchedResponse,
                         PostDeletedResponse
@@ -10,6 +15,9 @@ from models.posts.posts_service_response_model import (
                     )
 from services.base_service import BaseService
 from utils.tuple_converter import tuple_to_post_model
+
+
+M = TypeVar('M', bound=BaseModel)
 
 
 class PostsService(BaseService[PostsDao]):
@@ -135,3 +143,20 @@ class PostsService(BaseService[PostsDao]):
             response_body=response.response_body,
             db_record=db_record  # type:ignore
         )
+
+    def get_one_post(
+            self,
+            id: int,
+            response_model: Type[M],
+            params: dict | None = None
+            ):
+        print(f'POSTS SERVICE ID - {id}, response model - {response_model}, params - {params}')
+
+        return self.get_one(id, response_model, params)
+
+    def get_many_posts(
+            self,
+            response_model: type[M],
+            params: dict | None = None
+            ) -> FullAPIResponse[list[M]]:
+        return self.get_many(response_model, params)

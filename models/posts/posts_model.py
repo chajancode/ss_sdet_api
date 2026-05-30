@@ -9,10 +9,12 @@ class BaseModelIgnoreExtra(BaseModel):
 
 class Title(BaseModelIgnoreExtra):
     raw: Optional[str] = None
+    rendered: Optional[str] = None
 
 
 class Content(BaseModelIgnoreExtra):
     raw: Optional[str] = None
+    rendered: Optional[str] = None
 
 
 class PostCreatedOrPatchedResponse(BaseModelIgnoreExtra):

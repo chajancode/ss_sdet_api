@@ -1,4 +1,4 @@
-from typing import Generic, Type, TypeVar
+from typing import Generic, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
@@ -104,3 +104,31 @@ class BaseService(Generic[D]):
             status_code, response_body и др.).
         """
         return self.client.delete(id, test_data, response_model)
+
+    def get_many(
+            self,
+            response_model: Type[M],
+            params: Optional[dict] = None
+    ) -> FullAPIResponse[list[M]]:
+        return self.client.get_many(response_model, params)
+
+    def get_one(
+            self,
+            id: int,
+            response_model: Type[M],
+            params: Optional[dict] = None
+    ) -> FullAPIResponse[M]:
+        """
+        Получает одну запись по ID через GET-запрос.
+
+        Args:
+            id (int): Идентификатор ресурса.
+            response_model (BaseModel): Модель для десериализации ответа.
+            params (Optional[dict]): Параметры запроса.
+
+        Returns:
+            FullAPIResponse[M]: Ответ с кодом статуса и телом ответа.
+        """
+        print(f'BASE SERVICE ID - {id}, response model - {response_model}, params - {params}')
+
+        return self.client.get_one(id, response_model, params)

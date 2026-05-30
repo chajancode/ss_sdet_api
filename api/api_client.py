@@ -1,10 +1,10 @@
-from typing import Optional, Type, TypeVar
+from typing import List, Optional, Type, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from requests import Session
 from requests.auth import HTTPBasicAuth
 
-from models.posts.api_responses_models import FullAPIResponse
+from models.posts.api_responses_models import FullAPIResponse, WordPressError
 
 M = TypeVar('M', bound=BaseModel)
 
@@ -39,7 +39,8 @@ class APIClient:
                 response_model: Type[M],
                 id: Optional[int] = None,
                 data: Optional[dict] = None,
-                params: Optional[dict] = None
+                params: Optional[dict] = None,
+                headers={'Accept': 'application/json'}   # <-- добавьте
     ) -> FullAPIResponse[M]:
         """
         Выполняет HTTP-запрос и обрабатывает ответ.
@@ -65,26 +66,35 @@ class APIClient:
             включается код и текст ответа.
         """
 
-        url = f'{self.endpoint}/{id}' if id else self.endpoint
-
+        url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
+        print(f'API CLIENT url - {url}')
+        print(f"Request URL: {url}")
+        print(f"Auth: {self.auth}")
         response = self.session.request(
             method=method,
             url=url,
             json=data,
             params=params,
             auth=self.auth,
+            headers=headers
         )
+        print(f'API CLIENT RESPONSE SC - {response.status_code}')
+        print(f"Response headers: {response.headers}")
         if 200 <= response.status_code < 300:
             try:
                 parsed_body = response_model(**response.json())
+                error = None
             except Exception as e:
                 raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
         else:
             parsed_body = None
+            error = WordPressError(**response.json())
+            print(f"❗ Ошибка {response.status_code}:")  # <-- добавьте
 
         return FullAPIResponse[M](
                 status_code=response.status_code,
-                response_body=parsed_body
+                response_body=parsed_body,
+                error=error
         )
 
     def post(
@@ -177,6 +187,8 @@ class APIClient:
             FullAPIResponse[M]: Ответ с кодом статуса и десериализованным \
                 телом.
         """
+        print(f'API CLIENT GET - {id}, response model - {response_model}, params - {params}')
+
         return self._request(
             method='GET',
             id=id,
@@ -184,32 +196,28 @@ class APIClient:
             response_model=response_model,
         )
 
-    def get_list(
+    def get_many(
         self,
         response_model: Type[M],
-        params: Optional[dict] = None,
-    ) -> tuple[int, list[M]]:
-        """
-        Выполняет GET-запрос для получения списка записей.
-
-        Args:
-            response_model (BaseModel): Pydantic-модель одного элемента \
-                списка.
-            params: Параметры запроса.
-
-        Returns:
-            tuple (status_code, list[M])
-        """
-        url = self.endpoint
+        params: Optional[dict] = None
+    ) -> FullAPIResponse[List[M]]:
         response = self.session.request(
             method='GET',
-            url=url,
+            url=self.endpoint,
             params=params,
             auth=self.auth,
+            headers={'Accept': 'application/json'}
         )
         if 200 <= response.status_code < 300:
-            adapter = TypeAdapter(list[response_model])  # type: ignore
-            parsed_body = adapter.validate_python(response.json())
-            return response.status_code, parsed_body
+            parsed_body = TypeAdapter(
+                List[response_model]).validate_python(response.json())
+            error = None
         else:
-            return response.status_code, []
+            parsed_body = []
+            error = WordPressError(
+                **response.json()) if response.text else None
+        return FullAPIResponse(
+            status_code=response.status_code,
+            response_body=parsed_body,
+            error=error
+        )
