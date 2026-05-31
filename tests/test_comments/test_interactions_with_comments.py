@@ -15,8 +15,10 @@ class TestInteractWithComments:
     )
     def test_post_creation(
             self, comments_service: CommentsService,
-            comm_create: CommsTestDataCreate
+            comm_create: CommsTestDataCreate,
+            post_create: int
     ):
+        comm_create.post = post_create
         res = comments_service.check_comment_creation(comm_create.model_dump())
         assert res.status_code == 201
         assert res.response_body.content.raw == comm_create.content
