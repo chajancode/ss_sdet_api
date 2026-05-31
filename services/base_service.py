@@ -129,6 +129,4 @@ class BaseService(Generic[D]):
         Returns:
             FullAPIResponse[M]: Ответ с кодом статуса и телом ответа.
         """
-        print(f'BASE SERVICE ID - {id}, response model - {response_model}, params - {params}')
-
         return self.client.get_one(id, response_model, params)

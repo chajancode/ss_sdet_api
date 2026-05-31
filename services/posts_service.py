@@ -150,8 +150,6 @@ class PostsService(BaseService[PostsDao]):
             response_model: Type[M],
             params: dict | None = None
             ):
-        print(f'POSTS SERVICE ID - {id}, response model - {response_model}, params - {params}')
-
         return self.get_one(id, response_model, params)
 
     def get_many_posts(

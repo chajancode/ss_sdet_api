@@ -1,23 +1,28 @@
-from models.posts.post_create_and_response_dbc import ExpectedPostModel
+from typing import TypeVar
+
+from pydantic import BaseModel
+
+
+M = TypeVar('M', bound=BaseModel)
 
 
 def group_by_status(
-    post_ids: list[int],
-    posts: list[ExpectedPostModel]
-) -> dict[str, dict[int, ExpectedPostModel]]:
+    item_ids: list[int],
+    items: list[M]
+) -> dict[str, dict[int, M]]:
     """
     Группирует по статусу.
 
     Args:
-        post_ids (list[int]): Список ID постов (в том же порядке, что и posts)
-        posts (ExpectedPostModel): Список объектов
+        item_ids (list[int]): Список ID (в том же порядке, что и items)
+        items (ExpectedModel): Список объектов
     Returns:
-        Словарь вида {status: {id: ExpectedPostModel}}
+        Словарь вида {status: {id: ExpectedModel}}
     """
     result = {}
-    for pid, post in zip(post_ids, posts):
-        status = post.status
+    for id, item in zip(item_ids, items):
+        status = item.status  # type: ignore
         if status not in result:
             result[status] = {}
-        result[status][pid] = post
+        result[status][id] = item
     return result

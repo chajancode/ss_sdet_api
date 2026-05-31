@@ -40,7 +40,7 @@ class APIClient:
                 id: Optional[int] = None,
                 data: Optional[dict] = None,
                 params: Optional[dict] = None,
-                headers={'Accept': 'application/json'}   # <-- добавьте
+                headers={'Accept': 'application/json'}
     ) -> FullAPIResponse[M]:
         """
         Выполняет HTTP-запрос и обрабатывает ответ.
@@ -67,9 +67,6 @@ class APIClient:
         """
 
         url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
-        print(f'API CLIENT url - {url}')
-        print(f"Request URL: {url}")
-        print(f"Auth: {self.auth}")
         response = self.session.request(
             method=method,
             url=url,
@@ -78,8 +75,6 @@ class APIClient:
             auth=self.auth,
             headers=headers
         )
-        print(f'API CLIENT RESPONSE SC - {response.status_code}')
-        print(f"Response headers: {response.headers}")
         if 200 <= response.status_code < 300:
             try:
                 parsed_body = response_model(**response.json())
@@ -89,7 +84,6 @@ class APIClient:
         else:
             parsed_body = None
             error = WordPressError(**response.json())
-            print(f"❗ Ошибка {response.status_code}:")  # <-- добавьте
 
         return FullAPIResponse[M](
                 status_code=response.status_code,
@@ -187,8 +181,6 @@ class APIClient:
             FullAPIResponse[M]: Ответ с кодом статуса и десериализованным \
                 телом.
         """
-        print(f'API CLIENT GET - {id}, response model - {response_model}, params - {params}')
-
         return self._request(
             method='GET',
             id=id,

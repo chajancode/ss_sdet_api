@@ -7,7 +7,7 @@ from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from models.posts.posts_fixtures_results import FilteredPostsResult
 from models.posts.posts_model import PostCreatedOrPatchedResponse
 from services.posts_service import PostsService
-from utils.data_generators import GenerateExpectedPosts as gep
+from utils.data_generators import GenerateExpectedItem as gexp
 from utils.dict_creation import group_by_status
 from utils.string_utils import to_slug
 
@@ -24,6 +24,8 @@ def posts_service(auth_data, posts_dao) -> PostsService:
 
 @pytest.fixture(scope='session')
 def post_creation_params(request: pytest.FixtureRequest):
+    if not hasattr(request, 'param') or request.param is None:
+        return {'amount': 1, 'status': 'publish'}
     amount = request.param.get('amount', 5)
     status = request.param.get('status', 'publish')
     return {'amount': amount, 'status': status}
@@ -34,7 +36,7 @@ def posts_creation(session: DatabaseSession, post_creation_params: dict):
     """
     Создаёт нужное количество постов в БД
     """
-    expected_posts = gep.generate_posts(
+    expected_posts = gexp.generate_posts(
                                             **post_creation_params
                                         )
     posts_ids = []
@@ -79,14 +81,11 @@ def get_created_post_via_api(
     result = {}
 
     for post_id, expected in posts_creation.items():
-        print(f'GET VIA API expected {post_id} - {expected}')
         response: FullAPIResponse[
             PostCreatedOrPatchedResponse
             ] = posts_service.get_one_post(
             post_id, PostCreatedOrPatchedResponse
         )
-        print(f'GET VIA API response {post_id} - {response.response_body}')
-
         result[post_id] = (expected, response)
 
     return result
@@ -105,8 +104,8 @@ def mixed_posts_creation(
     """
     Создаёт 2 поста со статусом 'publish' и 2 поста со статусом 'draft'
     """
-    publish_posts = gep.generate_posts(amount=2, status='publish')
-    draft_posts = gep.generate_posts(amount=2, status='draft')
+    publish_posts = gexp.generate_posts(amount=2, status='publish')
+    draft_posts = gexp.generate_posts(amount=2, status='draft')
     all_posts = publish_posts + draft_posts
 
     post_ids = []
@@ -155,3 +154,32 @@ def get_filtered_post(
         'expected': posts_expected,
         'response': response,
         }
+
+
+@pytest.fixture(scope='session')
+def post_create(session: DatabaseSession, post_creation_params: dict):
+    """
+    Создаёт пост для проверки каментов
+    """
+    post = gexp.generate_posts()[0]
+
+    query = """
+    INSERT INTO wp_posts(
+    post_author, post_date, post_date_gmt, post_content, post_title,
+    post_excerpt, post_status, post_name, to_ping, pinged, post_modified,
+    post_modified_gmt, post_content_filtered, post_type
+    ) VALUES (
+    %s, NOW(), NOW(), %s, %s, '', %s, %s, '', '', NOW(), NOW(), '', %s
+    )
+    """
+    params = (
+        1, post.content, post.title, post.status,
+        to_slug(post.title), 'post'
+    )
+    post_id = session.execute(query, params)
+
+    yield post_id
+
+    session.execute(
+        'DELETE FROM wp_posts WHERE ID = %s', (post_id,)
+    )

@@ -9,12 +9,14 @@ class BaseModelIgnoreExtra(BaseModel):
 
 class Content(BaseModelIgnoreExtra):
     raw: Optional[str] = None
+    rendered: Optional[str]
 
 
 class CommentCreatedOrPatchedResponse(BaseModelIgnoreExtra):
     id: int
     post: int
     content: Content
+    status: str
 
 
 class CommentDeletedResponse(BaseModel):
