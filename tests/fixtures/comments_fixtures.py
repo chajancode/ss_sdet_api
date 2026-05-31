@@ -1,7 +1,8 @@
 import pytest
 
 from dao.comments_dao import CommentsDao
-from database_session import DatabaseSession
+from database.database_session import DatabaseSession
+from database.queries.comments_queries import CommentsQueries
 from models.comments.comments_fixtures_results import FilteredCommsResult
 from models.comments.comments_model import CommentCreatedOrPatchedResponse
 from models.comments.comms_create_and_response_dbc import ExpectedCommModel
@@ -48,14 +49,7 @@ def comments_creation(
     )
     comm_ids = []
     for comm in expected_comms:
-        query = """
-        INSERT INTO wp_comments(
-        comment_post_id, comment_author, comment_date, comment_date_gmt,
-        comment_content, comment_approved, user_id
-        ) VALUES (
-        %s, %s, NOW(), NOW(), %s, %s, %s
-        )
-        """
+        query = CommentsQueries.INSERT
         params = (
             comm.post_id, comment_creation_params['author'],
             comm.content, comm.status, comment_creation_params['user_id']
@@ -71,7 +65,7 @@ def comments_creation(
 
     for comm_id in inserted_comms:
         session.execute(
-                'DELETE FROM wp_comments WHERE comment_ID = %s', (comm_id,)
+                CommentsQueries.DELETE, (comm_id,)
             )
 
 
@@ -103,14 +97,7 @@ def single_comment_creation(
 ):
     expected = gexp.generate_comms(post_create, 1, 'approved')[0]
     result = {}
-    query = """
-    INSERT INTO wp_comments(
-    comment_post_id, comment_author, comment_date, comment_date_gmt,
-    comment_content, comment_approved, user_id
-    ) VALUES (
-    %s, %s, NOW(), NOW(), %s, %s, %s
-    )
-    """
+    query = CommentsQueries.INSERT
     params = (
             expected.post_id, comment_creation_params['author'],
             expected.content, expected.status,
@@ -122,7 +109,7 @@ def single_comment_creation(
 
     yield result
     session.execute(
-                'DELETE FROM wp_comments WHERE comment_ID = %s', (comm_id,)
+                CommentsQueries.DELETE, (comm_id,)
             )
 
 
@@ -162,14 +149,7 @@ def mixed_comms_creation(
 
     comm_ids = []
     for comm in all_comms:
-        query = """
-        INSERT INTO wp_comments(
-        comment_post_id, comment_author, comment_date, comment_date_gmt,
-        comment_content, comment_approved, user_id
-        ) VALUES (
-        %s, %s, NOW(), NOW(), %s, %s, %s
-        )
-        """
+        query = CommentsQueries.INSERT
         params = (
             comm.post_id, comment_creation_params['author'],
             comm.content, comm.status, comment_creation_params['user_id']
@@ -185,7 +165,7 @@ def mixed_comms_creation(
 
     for post_id in comm_ids:
         session.execute(
-            "DELETE FROM wp_posts WHERE ID = %s", (post_id,)
+            CommentsQueries.DELETE, (post_id,)
         )
 
 

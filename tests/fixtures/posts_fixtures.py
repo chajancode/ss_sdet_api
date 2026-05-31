@@ -1,7 +1,8 @@
 import pytest
 
 from dao.posts_dao import PostsDao
-from database_session import DatabaseSession
+from database.database_session import DatabaseSession
+from database.queries.posts_queries import PostsQueries
 from models.posts.api_responses_models import FullAPIResponse
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from models.posts.posts_fixtures_results import FilteredPostsResult
@@ -41,16 +42,7 @@ def posts_creation(session: DatabaseSession, post_creation_params: dict):
                                         )
     posts_ids = []
     for post in expected_posts:
-
-        query = """
-        INSERT INTO wp_posts(
-        post_author, post_date, post_date_gmt, post_content, post_title,
-        post_excerpt, post_status, post_name, to_ping, pinged, post_modified,
-        post_modified_gmt, post_content_filtered, post_type
-        ) VALUES (
-        %s, NOW(), NOW(), %s, %s, '', %s, %s, '', '', NOW(), NOW(), '', %s
-        )
-        """
+        query = PostsQueries.INSERT
         params = (
             1, post.content, post.title, post.status,
             to_slug(post.title), 'post'
@@ -66,7 +58,7 @@ def posts_creation(session: DatabaseSession, post_creation_params: dict):
 
     for post_id in inserted_posts:
         session.execute(
-            'DELETE FROM wp_posts WHERE ID = %s', (post_id,)
+            PostsQueries.DELETE, (post_id,)
         )
 
 
@@ -110,15 +102,7 @@ def mixed_posts_creation(
 
     post_ids = []
     for post in all_posts:
-        query = """
-        INSERT INTO wp_posts(
-        post_author, post_date, post_date_gmt, post_content, post_title,
-        post_excerpt, post_status, post_name, to_ping, pinged, post_modified,
-        post_modified_gmt, post_content_filtered, post_type
-        ) VALUES (
-        %s, NOW(), NOW(), %s, %s, '', %s, %s, '', '', NOW(), NOW(), '', %s
-        )
-        """
+        query = PostsQueries.INSERT
         params = (
             1, post.content, post.title, post.status,
             to_slug(post.title), 'post'
@@ -134,7 +118,7 @@ def mixed_posts_creation(
 
     for post_id in post_ids:
         session.execute(
-            "DELETE FROM wp_posts WHERE ID = %s", (post_id,)
+            PostsQueries.DELETE, (post_id,)
         )
 
 
@@ -163,15 +147,7 @@ def post_create(session: DatabaseSession, post_creation_params: dict):
     """
     post = gexp.generate_posts()[0]
 
-    query = """
-    INSERT INTO wp_posts(
-    post_author, post_date, post_date_gmt, post_content, post_title,
-    post_excerpt, post_status, post_name, to_ping, pinged, post_modified,
-    post_modified_gmt, post_content_filtered, post_type
-    ) VALUES (
-    %s, NOW(), NOW(), %s, %s, '', %s, %s, '', '', NOW(), NOW(), '', %s
-    )
-    """
+    query = PostsQueries.INSERT
     params = (
         1, post.content, post.title, post.status,
         to_slug(post.title), 'post'
@@ -181,5 +157,5 @@ def post_create(session: DatabaseSession, post_creation_params: dict):
     yield post_id
 
     session.execute(
-        'DELETE FROM wp_posts WHERE ID = %s', (post_id,)
+        PostsQueries.DELETE, (post_id,)
     )

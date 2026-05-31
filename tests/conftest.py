@@ -1,9 +1,9 @@
 import pytest
 
 from config.credentials import API_USERNAME, API_PASSWORD
-from database import Database
+from database.database import Database
 from config.db_config import db_settings
-from database_session import DatabaseSession
+from database.database_session import DatabaseSession
 
 pytest_plugins = [
     'tests.fixtures.posts_fixtures',
