@@ -2,7 +2,7 @@ import pytest
 
 from dao.posts_dao import PostsDao
 from database.database_session import DatabaseSession
-from database.queries.posts_queries import PostsQueries
+from database.repositories.posts_repository import PostsRepository
 from models.posts.api_responses_models import FullAPIResponse
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from models.posts.posts_fixtures_results import FilteredPostsResult
@@ -10,7 +10,6 @@ from models.posts.posts_model import PostCreatedOrPatchedResponse
 from services.posts_service import PostsService
 from utils.data_generators import GenerateExpectedItem as gexp
 from utils.dict_creation import group_by_status
-from utils.string_utils import to_slug
 
 
 @pytest.fixture(scope='session')
@@ -24,6 +23,11 @@ def posts_service(auth_data, posts_dao) -> PostsService:
 
 
 @pytest.fixture(scope='session')
+def posts_repository(session) -> PostsRepository:
+    return PostsRepository(session)
+
+
+@pytest.fixture(scope='session')
 def post_creation_params(request: pytest.FixtureRequest):
     if not hasattr(request, 'param') or request.param is None:
         return {'amount': 1, 'status': 'publish'}
@@ -33,33 +37,19 @@ def post_creation_params(request: pytest.FixtureRequest):
 
 
 @pytest.fixture(scope='session')
-def posts_creation(session: DatabaseSession, post_creation_params: dict):
+def posts_creation(
+    post_creation_params: dict,
+    posts_repository: PostsRepository
+):
     """
     Создаёт нужное количество постов в БД
     """
     expected_posts = gexp.generate_posts(
                                             **post_creation_params
                                         )
-    posts_ids = []
-    for post in expected_posts:
-        query = PostsQueries.INSERT
-        params = (
-            1, post.content, post.title, post.status,
-            to_slug(post.title), 'post'
-        )
-        post_id = session.execute(query, params)
-        posts_ids.append(post_id)
-
-    inserted_posts: dict[int, ExpectedPostModel] = {
-            post_id: post for post_id, post in zip(posts_ids, expected_posts)
-        }
-
+    inserted_posts = posts_repository.create_many(expected_posts)
     yield inserted_posts
-
-    for post_id in inserted_posts:
-        session.execute(
-            PostsQueries.DELETE, (post_id,)
-        )
+    posts_repository.delete_many(list(inserted_posts.keys()))
 
 
 @pytest.fixture(scope='session')
@@ -91,7 +81,8 @@ def post_doesnt_exist(posts_service: PostsService):
 
 @pytest.fixture(scope='function')
 def mixed_posts_creation(
-            session: DatabaseSession
+            session: DatabaseSession,
+            posts_repository: PostsRepository
         ):
     """
     Создаёт 2 поста со статусом 'publish' и 2 поста со статусом 'draft'
@@ -100,26 +91,18 @@ def mixed_posts_creation(
     draft_posts = gexp.generate_posts(amount=2, status='draft')
     all_posts = publish_posts + draft_posts
 
-    post_ids = []
-    for post in all_posts:
-        query = PostsQueries.INSERT
-        params = (
-            1, post.content, post.title, post.status,
-            to_slug(post.title), 'post'
-        )
-        post_id = session.execute(query, params)
-        post_ids.append(post_id)
+    inserted_posts = posts_repository.create_many(all_posts)
 
-    inserted_posts: dict[
+    grouped_posts: dict[
         str, dict[int, ExpectedPostModel]
-    ] = group_by_status(post_ids, all_posts)
-
-    yield inserted_posts
-
-    for post_id in post_ids:
-        session.execute(
-            PostsQueries.DELETE, (post_id,)
+    ] = group_by_status(
+            list(inserted_posts.keys()),
+            list(inserted_posts.values())
         )
+
+    yield grouped_posts
+
+    posts_repository.delete_many(list(inserted_posts.keys()))
 
 
 @pytest.fixture(scope='function')
@@ -141,21 +124,14 @@ def get_filtered_post(
 
 
 @pytest.fixture(scope='session')
-def post_create(session: DatabaseSession, post_creation_params: dict):
+def post_create(
+        post_creation_params: dict,
+        posts_repository: PostsRepository
+):
     """
     Создаёт пост для проверки каментов
     """
     post = gexp.generate_posts()[0]
-
-    query = PostsQueries.INSERT
-    params = (
-        1, post.content, post.title, post.status,
-        to_slug(post.title), 'post'
-    )
-    post_id = session.execute(query, params)
-
+    post_id = posts_repository.create(post)
     yield post_id
-
-    session.execute(
-        PostsQueries.DELETE, (post_id,)
-    )
+    posts_repository.delete(post_id)

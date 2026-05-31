@@ -11,8 +11,11 @@ class DatabaseSession:
 
     def execute(self, query: str, params: tuple = ()):
         with self.conn.cursor() as cursor:
-            cursor.execute(query, params)
-            return cursor.lastrowid
+            try:
+                cursor.execute(query, params)
+            except Exception as e:
+                raise RuntimeError(f'Ошибка при запросe: {e}') from e
+        return cursor.lastrowid
 
     def select(self, query: str, params: tuple = ()):
         with self.conn.cursor() as cursor:
