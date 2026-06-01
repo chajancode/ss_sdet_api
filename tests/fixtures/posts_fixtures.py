@@ -1,7 +1,6 @@
 import pytest
 
 from dao.posts_dao import PostsDao
-from database.database_session import DatabaseSession
 from database.repositories.posts_repository import PostsRepository
 from models.posts.api_responses_models import FullAPIResponse
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
@@ -81,7 +80,6 @@ def post_doesnt_exist(posts_service: PostsService):
 
 @pytest.fixture(scope='function')
 def mixed_posts_creation(
-            session: DatabaseSession,
             posts_repository: PostsRepository
         ):
     """

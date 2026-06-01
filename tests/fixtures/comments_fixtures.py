@@ -2,7 +2,7 @@ import pytest
 
 from dao.comments_dao import CommentsDao
 from database.database_session import DatabaseSession
-from database.queries.comments_queries import CommentsQueries
+from database.repositories.comments_repository import CommentsRepository
 from models.comments.comments_fixtures_results import FilteredCommsResult
 from models.comments.comments_model import CommentCreatedOrPatchedResponse
 from models.comments.comms_create_and_response_dbc import ExpectedCommModel
@@ -23,6 +23,11 @@ def comments_service(auth_data, comments_dao):
 
 
 @pytest.fixture(scope='session')
+def comments_repository(session):
+    return CommentsRepository(session)
+
+
+@pytest.fixture(scope='session')
 def comment_creation_params(request: pytest.FixtureRequest) -> dict:
     amount = request.param.get('amount', 5)
     user_id = request.param.get('user_id', '1')
@@ -38,7 +43,7 @@ def comment_creation_params(request: pytest.FixtureRequest) -> dict:
 
 @pytest.fixture(scope='session')
 def comments_creation(
-    session: DatabaseSession,
+    comments_repository: CommentsRepository,
     post_create: int,
     comment_creation_params: dict
 ):
@@ -47,26 +52,14 @@ def comments_creation(
         comment_creation_params['amount'],
         comment_creation_params['status']
     )
-    comm_ids = []
-    for comm in expected_comms:
-        query = CommentsQueries.INSERT
-        params = (
-            comm.post_id, comment_creation_params['author'],
-            comm.content, comm.status, comment_creation_params['user_id']
-        )
-        comm_id = session.execute(query, params)
-        comm_ids.append(comm_id)
-
-    inserted_comms: dict[int, ExpectedCommModel] = {
-        comm_id: comm for comm_id, comm in zip(comm_ids, expected_comms)
-    }
-
+    inserted_comms = comments_repository.create_many(
+        expected_comms,
+        comment_creation_params['author'],
+        comment_creation_params['user_id']
+    )
     yield inserted_comms
 
-    for comm_id in inserted_comms:
-        session.execute(
-                CommentsQueries.DELETE, (comm_id,)
-            )
+    comments_repository.delete_many(list(inserted_comms.keys()))
 
 
 @pytest.fixture(scope='session')
@@ -93,24 +86,23 @@ def get_created_comms_via_api(
 def single_comment_creation(
         session: DatabaseSession,
         post_create: int,
-        comment_creation_params: dict
+        comment_creation_params: dict,
+        comments_repository: CommentsRepository
 ):
-    expected = gexp.generate_comms(post_create, 1, 'approved')[0]
-    result = {}
-    query = CommentsQueries.INSERT
-    params = (
-            expected.post_id, comment_creation_params['author'],
-            expected.content, expected.status,
-            comment_creation_params['user_id']
-        )
-    comm_id = session.execute(query, params)
+    expected: ExpectedCommModel = gexp.generate_comms(
+        post_create, 1, 'approved')[0]
 
-    result[comm_id] = expected
+    inserted_comm = {}
 
-    yield result
-    session.execute(
-                CommentsQueries.DELETE, (comm_id,)
-            )
+    comm_id = comments_repository.create(
+        expected,
+        comment_creation_params['author'],
+        comment_creation_params['user_id']
+    )
+    inserted_comm[comm_id] = expected
+    yield inserted_comm
+
+    comments_repository.delete(comm_id)
 
 
 @pytest.fixture(scope='session')
@@ -119,7 +111,9 @@ def get_single_comm_via_api(
         single_comment_creation: dict[int, ExpectedCommModel]
 ) -> tuple[int, ExpectedCommModel,
            FullAPIResponse[CommentCreatedOrPatchedResponse]]:
+
     comm_id, expected = next(iter(single_comment_creation.items()))
+
     response = comments_service.get_one(
         comm_id, CommentCreatedOrPatchedResponse
     )
@@ -136,7 +130,8 @@ def comm_doesnt_exist(comments_service: CommentsService):
 def mixed_comms_creation(
             session: DatabaseSession,
             post_create: int,
-            comment_creation_params: dict
+            comment_creation_params: dict,
+            comments_repository: CommentsRepository
         ):
     """
     Создаёт 2 коммента со статусом 'approved' и 2 коммента со статусом 'trash'
@@ -147,26 +142,19 @@ def mixed_comms_creation(
     trash_comms = gexp.generate_comms(post_create, amount=2, status='trash')
     all_comms = approved_comms + trash_comms
 
-    comm_ids = []
-    for comm in all_comms:
-        query = CommentsQueries.INSERT
-        params = (
-            comm.post_id, comment_creation_params['author'],
-            comm.content, comm.status, comment_creation_params['user_id']
-        )
-        post_id = session.execute(query, params)
-        comm_ids.append(post_id)
+    inserted_comms = comments_repository.create_many(
+        all_comms,
+        comment_creation_params['author'],
+        comment_creation_params['user_id']
+    )
 
-    inserted_posts: dict[
+    grouped_comms: dict[
         str, dict[int, ExpectedCommModel]
-    ] = group_by_status(comm_ids, all_comms)
+    ] = group_by_status(list(inserted_comms.keys()), all_comms)
 
-    yield inserted_posts
+    yield grouped_comms
 
-    for post_id in comm_ids:
-        session.execute(
-            CommentsQueries.DELETE, (post_id,)
-        )
+    comments_repository.delete_many(list(inserted_comms.keys()))
 
 
 @pytest.fixture(scope='function')
