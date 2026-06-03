@@ -1,10 +1,10 @@
-from typing import Optional, Type, TypeVar
+from typing import List, Optional, Type, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from requests import Session
 from requests.auth import HTTPBasicAuth
 
-from models.posts.api_responses_models import FullAPIResponse
+from models.posts.api_responses_models import FullAPIResponse, WordPressError
 
 M = TypeVar('M', bound=BaseModel)
 
@@ -39,6 +39,8 @@ class APIClient:
                 response_model: Type[M],
                 id: Optional[int] = None,
                 data: Optional[dict] = None,
+                params: Optional[dict] = None,
+                headers={'Accept': 'application/json'}
     ) -> FullAPIResponse[M]:
         """
         Выполняет HTTP-запрос и обрабатывает ответ.
@@ -64,25 +66,29 @@ class APIClient:
             включается код и текст ответа.
         """
 
-        url = f'{self.endpoint}/{id}' if id else self.endpoint
-
+        url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
         response = self.session.request(
             method=method,
             url=url,
             json=data,
+            params=params,
             auth=self.auth,
+            headers=headers
         )
         if 200 <= response.status_code < 300:
             try:
                 parsed_body = response_model(**response.json())
+                error = None
             except Exception as e:
                 raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
         else:
             parsed_body = None
+            error = WordPressError(**response.json())
 
         return FullAPIResponse[M](
                 status_code=response.status_code,
-                response_body=parsed_body
+                response_body=parsed_body,
+                error=error
         )
 
     def post(
@@ -155,4 +161,55 @@ class APIClient:
                 id=id,
                 data=data,
                 response_model=response_model,
+        )
+
+    def get_one(
+        self,
+        id: int,
+        response_model: Type[M],
+        params: Optional[dict] = None,
+    ) -> FullAPIResponse[M]:
+        """
+        Выполняет GET-запрос для получения одного объеута по ID.
+
+        Args:
+            id (int): Идентификатор записи.
+            response_model (BaseModel): Pydantic-модель для тела ответа.
+            params: Дополнительные параметры.
+
+        Returns:
+            FullAPIResponse[M]: Ответ с кодом статуса и десериализованным \
+                телом.
+        """
+        return self._request(
+            method='GET',
+            id=id,
+            params=params,
+            response_model=response_model,
+        )
+
+    def get_many(
+        self,
+        response_model: Type[M],
+        params: Optional[dict] = None
+    ) -> FullAPIResponse[List[M]]:
+        response = self.session.request(
+            method='GET',
+            url=self.endpoint,
+            params=params,
+            auth=self.auth,
+            headers={'Accept': 'application/json'}
+        )
+        if 200 <= response.status_code < 300:
+            parsed_body = TypeAdapter(
+                List[response_model]).validate_python(response.json())
+            error = None
+        else:
+            parsed_body = []
+            error = WordPressError(
+                **response.json()) if response.text else None
+        return FullAPIResponse(
+            status_code=response.status_code,
+            response_body=parsed_body,
+            error=error
         )
