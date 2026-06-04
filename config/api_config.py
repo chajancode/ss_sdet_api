@@ -19,3 +19,19 @@ class APISettings(BaseSettings):
 
 
 api_settings = APISettings()
+
+
+class YandexAPISettings(BaseSettings):
+    YA_OAUTH_TOKEN: Optional[str] = None
+    YA_HOST: Optional[str] = None
+
+    @property
+    def YA_API_URL(self) -> str:
+        return f'{self.YA_HOST}'
+
+    model_config = SettingsConfigDict(
+        env_file='.env.yandex', env_file_encoding='utf-8'
+    )
+
+
+yandex_api_settings = YandexAPISettings()

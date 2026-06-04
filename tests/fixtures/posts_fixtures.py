@@ -1,8 +1,9 @@
+from pydantic import BaseModel
 import pytest
 
 from dao.posts_dao import PostsDao
 from database.repositories.posts_repository import PostsRepository
-from models.posts.api_responses_models import FullAPIResponse
+from models.posts.api_responses_models import FullAPIResponse, WordPressError
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from models.posts.posts_fixtures_results import FilteredPostsResult
 from models.posts.posts_model import PostCreatedOrPatchedResponse
@@ -57,13 +58,13 @@ def get_created_post_via_api(
         posts_creation: dict[int, ExpectedPostModel]
         ) -> dict[
             int, tuple[ExpectedPostModel, FullAPIResponse[
-                                PostCreatedOrPatchedResponse]]
+                                PostCreatedOrPatchedResponse, WordPressError]]
             ]:
     result = {}
 
     for post_id, expected in posts_creation.items():
         response: FullAPIResponse[
-            PostCreatedOrPatchedResponse
+            PostCreatedOrPatchedResponse, BaseModel
             ] = posts_service.get_one_post(
             post_id, PostCreatedOrPatchedResponse
         )
@@ -117,7 +118,7 @@ def get_filtered_post(
     )
     return {
         'expected': posts_expected,
-        'response': response,
+        'response': response,  # type: ignore
         }
 
 

@@ -3,6 +3,7 @@ from typing import Generic, Optional, TypeVar
 from pydantic import BaseModel
 
 T = TypeVar('T')
+E = TypeVar('E')
 
 
 class WordPressErrorData(BaseModel):
@@ -15,7 +16,7 @@ class WordPressError(BaseModel):
     data: WordPressErrorData
 
 
-class FullAPIResponse(BaseModel, Generic[T]):
+class FullAPIResponse(BaseModel, Generic[T, E]):
     status_code: int
     response_body: T | None
-    error: Optional[WordPressError]
+    error: Optional[E] = None

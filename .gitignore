@@ -1,5 +1,6 @@
 venv
 .env
+.env.yandex
 .vscode
 __pycache__
 test.py

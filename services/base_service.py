@@ -26,9 +26,10 @@ class BaseService(Generic[D]):
     """
     def __init__(
                 self,
-                auth_data: dict,
                 endpoint: str,
-                dao: D
+                auth_data: Optional[dict[str, str]] = None,
+                dao: Optional[D] = None,
+                headers: Optional[dict[str, str]] = None
             ) -> None:
         """
         Инициализирует сервис.
@@ -42,14 +43,18 @@ class BaseService(Generic[D]):
             endpoint(str): Базовый URL API.
             dao (BaseDao): Экземпляр DAO.
         """
-        self.auth = HTTPBasicAuth(**auth_data)
-        self.client = APIClient(endpoint, self.auth)
+        if auth_data is not None:
+            self.auth = HTTPBasicAuth(**auth_data)
+        else:
+            self.auth = None
         self._last_created_id = None
         self.dao = dao
+        self.headers = headers
+        self.client = APIClient(endpoint, self.auth, headers=self.headers)
 
     def create(
             self, test_data: dict, response_model: Type[M]
-            ) -> FullAPIResponse[M]:
+            ) -> FullAPIResponse[M, BaseModel]:
         """
         Создаёт новую запись через POST-запрос.
 
@@ -73,7 +78,7 @@ class BaseService(Generic[D]):
 
     def patch(
             self, id: int, test_data: dict, response_model: Type[M]
-            ) -> FullAPIResponse[M]:
+            ) -> FullAPIResponse[M, BaseModel]:
         """
         Обновляет запись через PATCH-запрос.
 
@@ -90,7 +95,7 @@ class BaseService(Generic[D]):
 
     def delete(
             self, id: int, test_data: dict, response_model: Type[M]
-            ) -> FullAPIResponse[M]:
+            ) -> FullAPIResponse[M, BaseModel]:
         """
         Удаляет запись через DELETE-запрос.
 
@@ -109,15 +114,15 @@ class BaseService(Generic[D]):
             self,
             response_model: Type[M],
             params: Optional[dict] = None
-    ) -> FullAPIResponse[list[M]]:
+    ) -> FullAPIResponse[list[M], BaseModel]:
         return self.client.get_many(response_model, params)
 
-    def get_one(
+    def get_by_id(
             self,
             id: int,
             response_model: Type[M],
             params: Optional[dict] = None
-    ) -> FullAPIResponse[M]:
+    ) -> FullAPIResponse[M, BaseModel]:
         """
         Получает одну запись по ID через GET-запрос.
 
@@ -129,4 +134,4 @@ class BaseService(Generic[D]):
         Returns:
             FullAPIResponse[M]: Ответ с кодом статуса и телом ответа.
         """
-        return self.client.get_one(id, response_model, params)
+        return self.client.get_by_id(id, response_model, params)

@@ -1,6 +1,6 @@
 import pytest
 
-from models.posts.api_responses_models import FullAPIResponse
+from models.posts.api_responses_models import FullAPIResponse, WordPressError
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from models.posts.posts_fixtures_results import FilteredPostsResult
 from models.posts.posts_model import PostCreatedOrPatchedResponse
@@ -13,7 +13,8 @@ class TestGetPostsFromDB:
     ], indirect=True)
     def test_get_all_created_posts(
         self, get_created_post_via_api: dict[int, tuple[
-            ExpectedPostModel, FullAPIResponse[PostCreatedOrPatchedResponse]]]
+            ExpectedPostModel, FullAPIResponse[
+                PostCreatedOrPatchedResponse, WordPressError]]]
     ):
 
         for post_id, (expected, response) in get_created_post_via_api.items():
@@ -29,7 +30,8 @@ class TestGetPostsFromDB:
     ], indirect=True)
     def test_get_post_by_id(
         self, get_created_post_via_api: dict[int, tuple[
-            ExpectedPostModel, FullAPIResponse[PostCreatedOrPatchedResponse]]]
+            ExpectedPostModel, FullAPIResponse[
+                PostCreatedOrPatchedResponse, WordPressError]]]
     ):
         for post_id, (expected, response) in get_created_post_via_api.items():
             assert response.status_code == 200
@@ -41,7 +43,8 @@ class TestGetPostsFromDB:
 
     def test_get_post_not_exists(
             self,
-            post_doesnt_exist: FullAPIResponse[PostCreatedOrPatchedResponse]
+            post_doesnt_exist: FullAPIResponse[
+                PostCreatedOrPatchedResponse, WordPressError]
     ):
         assert post_doesnt_exist.error is not None
         assert post_doesnt_exist.status_code == 404
