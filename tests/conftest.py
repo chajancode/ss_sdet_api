@@ -7,7 +7,8 @@ from database.database_session import DatabaseSession
 
 pytest_plugins = [
     'tests.fixtures.posts_fixtures',
-    'tests.fixtures.comments_fixtures'
+    'tests.fixtures.comments_fixtures',
+    'tests.fixtures.yandex_fixtures'
 ]
 
 

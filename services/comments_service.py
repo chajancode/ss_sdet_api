@@ -40,7 +40,7 @@ class CommentsService(BaseService[CommentsDao]):
             auth_data (dict): Словарь с полями 'username' и 'password'.
             dao (CommentsDao): Экземпляр CommentsDao.
         """
-        super().__init__(auth_data, wpe.COMMENTS_ENDPOINT, dao)
+        super().__init__(wpe.COMMENTS_ENDPOINT, auth_data, dao)
 
     def _get_db_record(self, comment_id: int | None):
         """
@@ -55,7 +55,7 @@ class CommentsService(BaseService[CommentsDao]):
         if comment_id is None:
             return None
         return tuple_to_comm_model(
-            self.dao.get_comment_by_id(comment_id)
+            self.dao.get_comment_by_id(comment_id)  # type: ignore
         )
 
     def check_comment_creation(self, test_data: dict):

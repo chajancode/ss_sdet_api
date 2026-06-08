@@ -45,7 +45,7 @@ class PostsService(BaseService[PostsDao]):
             dao (CommentsDao): Экземпляр PostsDao. При создании без аргумента
                 используется новый экземпляр.
         """
-        super().__init__(auth_data, wpe.POSTS_ENDPOINT, dao)
+        super().__init__(wpe.POSTS_ENDPOINT, auth_data, dao)
 
     def _get_db_record(self, post_id: int | None):
         """
@@ -59,7 +59,7 @@ class PostsService(BaseService[PostsDao]):
         """
         if post_id is None:
             return None
-        record = self.dao.get_post_by_id(post_id)
+        record = self.dao.get_post_by_id(post_id)  # type: ignore
         if record is None:
             return None
         return tuple_to_post_model(record)
@@ -150,11 +150,11 @@ class PostsService(BaseService[PostsDao]):
             response_model: Type[M],
             params: dict | None = None
             ):
-        return self.get_one(id, response_model, params)
+        return self.get_by_id(id, response_model, params)
 
     def get_many_posts(
             self,
             response_model: type[M],
             params: dict | None = None
-            ) -> FullAPIResponse[list[M]]:
+            ) -> FullAPIResponse[list[M], BaseModel]:
         return self.get_many(response_model, params)

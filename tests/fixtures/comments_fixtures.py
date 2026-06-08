@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 import pytest
 
 from dao.comments_dao import CommentsDao
@@ -68,13 +69,13 @@ def get_created_comms_via_api(
         comments_creation: dict[int, ExpectedCommModel]
         ) -> dict[
             int, tuple[ExpectedCommModel, FullAPIResponse[
-                                CommentCreatedOrPatchedResponse]]
+                                CommentCreatedOrPatchedResponse, BaseModel]]
         ]:
     result = {}
     for comm_id, expected in comments_creation.items():
         response: FullAPIResponse[
-            CommentCreatedOrPatchedResponse
-            ] = comments_service.get_one(
+            CommentCreatedOrPatchedResponse, BaseModel
+            ] = comments_service.get_by_id(
                 comm_id, CommentCreatedOrPatchedResponse
             )
         result[comm_id] = (expected, response)
@@ -110,11 +111,11 @@ def get_single_comm_via_api(
         comments_service: CommentsService,
         single_comment_creation: dict[int, ExpectedCommModel]
 ) -> tuple[int, ExpectedCommModel,
-           FullAPIResponse[CommentCreatedOrPatchedResponse]]:
+           FullAPIResponse[CommentCreatedOrPatchedResponse, BaseModel]]:
 
     comm_id, expected = next(iter(single_comment_creation.items()))
 
-    response = comments_service.get_one(
+    response = comments_service.get_by_id(
         comm_id, CommentCreatedOrPatchedResponse
     )
     return (comm_id, expected, response)
@@ -122,7 +123,7 @@ def get_single_comm_via_api(
 
 @pytest.fixture(scope='session')
 def comm_doesnt_exist(comments_service: CommentsService):
-    response = comments_service.get_one(0, CommentCreatedOrPatchedResponse)
+    response = comments_service.get_by_id(0, CommentCreatedOrPatchedResponse)
     return response
 
 
@@ -174,5 +175,5 @@ def get_filtered_comm(
     )
     return {
         'expected': comm_expected,
-        'response': response,
+        'response': response,  # type: ignore
         }

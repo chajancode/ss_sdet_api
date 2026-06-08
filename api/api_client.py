@@ -7,6 +7,7 @@ from requests.auth import HTTPBasicAuth
 from models.posts.api_responses_models import FullAPIResponse, WordPressError
 
 M = TypeVar('M', bound=BaseModel)
+E = TypeVar('E', bound=BaseModel)
 
 
 class APIClient:
@@ -20,7 +21,12 @@ class APIClient:
         endpoint (str): Базовый URL API.
         auth (HTTPBasicAuth): Данные для BasicAuth.
     """
-    def __init__(self, endpoint: str, auth: HTTPBasicAuth) -> None:
+    def __init__(
+            self,
+            endpoint: str,
+            auth: Optional[HTTPBasicAuth] = None,
+            headers: Optional[dict[str, str]] = None
+            ) -> None:
         """
         Инициализирует API-клиент.
 
@@ -32,6 +38,7 @@ class APIClient:
         self.session = Session()
         self.endpoint: str = endpoint
         self.auth = auth
+        self.headers = headers
 
     def _request(
                 self,
@@ -40,8 +47,9 @@ class APIClient:
                 id: Optional[int] = None,
                 data: Optional[dict] = None,
                 params: Optional[dict] = None,
-                headers={'Accept': 'application/json'}
-    ) -> FullAPIResponse[M]:
+                headers: Optional[dict] = None,
+                error_model: Type[E] = WordPressError
+    ) -> FullAPIResponse[M, E]:
         """
         Выполняет HTTP-запрос и обрабатывает ответ.
 
@@ -83,19 +91,19 @@ class APIClient:
                 raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
         else:
             parsed_body = None
-            error = WordPressError(**response.json())
+            error = error_model(**response.json())  # type: ignore
 
-        return FullAPIResponse[M](
+        return FullAPIResponse[M, E](
                 status_code=response.status_code,
                 response_body=parsed_body,
-                error=error
+                error=error  # type: ignore
         )
 
     def post(
                 self,
                 data: dict,
                 response_model: Type[M]
-    ) -> FullAPIResponse[M]:
+    ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет POST-запрос.
 
@@ -119,7 +127,7 @@ class APIClient:
                 id: int,
                 data: dict,
                 response_model: Type[M]
-    ) -> FullAPIResponse[M]:
+    ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет PATCH-запрос.
 
@@ -144,7 +152,7 @@ class APIClient:
                 id: int,
                 data: dict,
                 response_model: Type[M]
-    ) -> FullAPIResponse[M]:
+    ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет DELETE-запрос.
 
@@ -163,12 +171,12 @@ class APIClient:
                 response_model=response_model,
         )
 
-    def get_one(
+    def get_by_id(
         self,
         id: int,
         response_model: Type[M],
         params: Optional[dict] = None,
-    ) -> FullAPIResponse[M]:
+    ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет GET-запрос для получения одного объеута по ID.
 
@@ -188,11 +196,26 @@ class APIClient:
             response_model=response_model,
         )
 
+    def get_one(
+        self,
+        response_model: Type[M],
+        params: Optional[dict] = None,
+        headers: Optional[dict] = None,
+        error_model: Optional[Type[E]] = None
+    ) -> FullAPIResponse[M, BaseModel]:
+        return self._request(
+            method='GET',
+            response_model=response_model,
+            params=params,
+            headers=headers,
+            error_model=error_model  # type: ignore
+        )
+
     def get_many(
         self,
         response_model: Type[M],
         params: Optional[dict] = None
-    ) -> FullAPIResponse[List[M]]:
+    ) -> FullAPIResponse[List[M], BaseModel]:
         response = self.session.request(
             method='GET',
             url=self.endpoint,

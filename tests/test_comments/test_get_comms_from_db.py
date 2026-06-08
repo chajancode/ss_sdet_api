@@ -3,7 +3,7 @@ import pytest
 from models.comments.comments_fixtures_results import FilteredCommsResult
 from models.comments.comments_model import CommentCreatedOrPatchedResponse
 from models.comments.comms_create_and_response_dbc import ExpectedCommModel
-from models.posts.api_responses_models import FullAPIResponse
+from models.posts.api_responses_models import FullAPIResponse, WordPressError
 from utils.string_utils import strip_html
 
 
@@ -19,7 +19,7 @@ class TestGetCommsFromDB:
     def test_all_created_comms(
         self, get_created_comms_via_api: dict[int, tuple[
             ExpectedCommModel, FullAPIResponse[
-                            CommentCreatedOrPatchedResponse]]]
+                            CommentCreatedOrPatchedResponse, WordPressError]]]
     ):
         for comm_id, (expected, response) in get_created_comms_via_api.items():
             assert response.status_code == 200
@@ -39,7 +39,7 @@ class TestGetCommsFromDB:
     def test_get_comm_by_id(
         self,
         get_single_comm_via_api: tuple[int, ExpectedCommModel, FullAPIResponse[
-             CommentCreatedOrPatchedResponse]]
+             CommentCreatedOrPatchedResponse, WordPressError]]
     ):
         assert len(get_single_comm_via_api) == 3
         id, expected, response = get_single_comm_via_api
@@ -54,7 +54,8 @@ class TestGetCommsFromDB:
 
     def test_get_comm_not_exists(
             self,
-            comm_doesnt_exist: FullAPIResponse[CommentCreatedOrPatchedResponse]
+            comm_doesnt_exist: FullAPIResponse[
+                CommentCreatedOrPatchedResponse, WordPressError]
     ):
         assert comm_doesnt_exist.error is not None
         assert comm_doesnt_exist.status_code == 404
