@@ -90,8 +90,6 @@ class APIClient:
                 if response.status_code == 204 or not response.text:
                     parsed_body = None
                 else:
-                    # print(f'APICLIENT response {response.json()}')
-
                     parsed_body = response_model(**response.json())
                 error = None
             except Exception as e:

@@ -19,6 +19,10 @@ class GenerateRandomTexts:
     def generate_long_text():
         return faker.paragraph(nb_sentences=5)
 
+    @staticmethod
+    def generate_word():
+        return faker.word()
+
 
 class GenerateExpectedItem:
     @staticmethod
