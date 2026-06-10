@@ -10,5 +10,5 @@ class UserContent(BaseIgnoreExtra):
     display_name: str
 
 
-class GetUserDataResponseModel(BaseIgnoreExtra):
+class GetUserDataResponse(BaseIgnoreExtra):
     user: UserContent

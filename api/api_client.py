@@ -48,7 +48,7 @@ class APIClient:
                 data: Optional[dict] = None,
                 params: Optional[dict] = None,
                 headers: Optional[dict] = None,
-                error_model: Type[E] = WordPressError
+                error_model: Optional[Type[E]] = None,
     ) -> FullAPIResponse[M, E]:
         """
         Выполняет HTTP-запрос и обрабатывает ответ.
@@ -73,6 +73,8 @@ class APIClient:
             RuntimeError: Если статус-код ответа >= 400. В сообщение \
             включается код и текст ответа.
         """
+        if error_model is None:
+            error_model = WordPressError  # type: ignore
 
         url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
         response = self.session.request(
@@ -85,7 +87,10 @@ class APIClient:
         )
         if 200 <= response.status_code < 300:
             try:
-                parsed_body = response_model(**response.json())
+                if response.status_code == 204 or not response.text:
+                    parsed_body = None
+                else:
+                    parsed_body = response_model(**response.json())
                 error = None
             except Exception as e:
                 raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
@@ -122,6 +127,33 @@ class APIClient:
 
         )
 
+    def put(
+        self,
+        response_model: Type[M],
+        params: Optional[dict] = None,
+        headers: Optional[dict] = None,
+        error_model: Optional[Type[E]] = None
+    ) -> FullAPIResponse[M, BaseModel]:
+        """
+        Выполняет PUT-запрос.
+
+        Args:
+            data (dict): Данные новой записи.
+            response_model (BaseModel): Модель для десериализации тела ответа.
+
+
+        Returns:
+            FullAPIResponse[M]: Ответ с кодом статуса и телом запроса.
+        """
+
+        return self._request(
+                method='PUT',
+                response_model=response_model,
+                params=params,
+                headers=headers,
+                error_model=error_model  # type: ignore
+        )
+
     def patch(
                 self,
                 id: int,
@@ -149,9 +181,12 @@ class APIClient:
 
     def delete(
                 self,
-                id: int,
-                data: dict,
-                response_model: Type[M]
+                response_model: Type[M],
+                data: Optional[dict] = None,
+                id: Optional[int] = None,
+                params: Optional[dict] = None,
+                headers: Optional[dict] = None,
+                error_model: Optional[Type[E]] = None
     ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет DELETE-запрос.
@@ -168,7 +203,10 @@ class APIClient:
                 method='DELETE',
                 id=id,
                 data=data,
+                params=params,
+                headers=headers,
                 response_model=response_model,
+                error_model=error_model  # type: ignore
         )
 
     def get_by_id(
