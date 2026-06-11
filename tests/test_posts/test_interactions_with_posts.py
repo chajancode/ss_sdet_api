@@ -29,9 +29,14 @@ class TestInteractWithPosts:
             'post_patch', data_creator('post_patch')
     )
     def test_post_patching(
-            self, posts_service: PostsService, post_patch: PostTestDataPatch
+            self,
+            posts_service: PostsService,
+            post_patch: PostTestDataPatch,
+            post_create: int
     ):
-        res = posts_service.check_post_patching(post_patch.model_dump())
+        res = posts_service.check_post_patching(
+            post_create, post_patch.model_dump()
+        )
         assert res.status_code == 200
         assert res.response_body.title.raw == post_patch.title
         assert res.response_body.content.raw == post_patch.content
@@ -42,11 +47,18 @@ class TestInteractWithPosts:
             'post_delete', data_creator('post_delete')
     )
     def test_post_deletion(
-            self, posts_service: PostsService, post_delete: PostTestDataDelete
+            self,
+            posts_service: PostsService,
+            post_delete: PostTestDataDelete,
+            post_create: int
     ):
-        res = posts_service.check_post_deletion(post_delete.model_dump())
+        res = posts_service.check_post_deletion(
+            post_create, post_delete.model_dump()
+        )
         assert res.status_code == 200
         assert res.response_body.deleted is True  # type: ignore
         assert not res.db_record
-        res = posts_service.check_post_deletion(post_delete.model_dump())
+        res = posts_service.check_post_deletion(
+            post_create, post_delete.model_dump()
+        )
         assert res.status_code == 404

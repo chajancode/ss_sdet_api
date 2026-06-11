@@ -91,7 +91,9 @@ class BaseService(Generic[D]):
             FullAPIResponse[M]: Ответ от APIClient (объект с полями \
             status_code, response_body и др.).
         """
-        return self.client.patch(id, test_data, response_model)
+        return self.client.patch(
+            id=id, data=test_data, response_model=response_model
+        )
 
     def delete(
             self, id: int, test_data: dict, response_model: Type[M]
@@ -108,7 +110,9 @@ class BaseService(Generic[D]):
             FullAPIResponse[M]: Ответ от APIClient (объект с полями \
             status_code, response_body и др.).
         """
-        return self.client.delete(id, test_data, response_model)
+        return self.client.delete(
+            id=id, data=test_data, response_model=response_model
+        )
 
     def get_many(
             self,
