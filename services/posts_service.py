@@ -88,7 +88,7 @@ class PostsService(BaseService[PostsDao]):
             db_record=self._get_db_record(self._last_created_id)
         )
 
-    def check_post_patching(self, test_data: dict):
+    def check_post_patching(self, id: int, test_data: dict):
         """
         Обновляет последний созданный пост через API и сверяет с БД.
 
@@ -105,17 +105,17 @@ class PostsService(BaseService[PostsDao]):
                 для передачи в тесты.
         """
         response = self.patch(
-            self._last_created_id,  # type: ignore
+            id,  # type: ignore
             test_data,
             PostCreatedOrPatchedResponse
         )
         return PostsServiceResponse(
             status_code=response.status_code,
             response_body=response.response_body,  # type: ignore
-            db_record=self._get_db_record(self._last_created_id)
+            db_record=self._get_db_record(id)
         )
 
-    def check_post_deletion(self, test_data: dict):
+    def check_post_deletion(self, id: int, test_data: dict):
         """
         Удаляет последний созданный пост через API и проверяет
         отсутствие в БД.
@@ -130,10 +130,11 @@ class PostsService(BaseService[PostsDao]):
         Returns:
             PostsServiceDeleteResponse: Ответ API и результат запроса к БД.
         """
+
         response = self.delete(
-            self._last_created_id,  # type: ignore
-            test_data,
-            PostDeletedResponse
+            id=id,  # type: ignore
+            test_data=test_data,
+            response_model=PostDeletedResponse
         )
         db_record = self._get_db_record(
             self._last_created_id
