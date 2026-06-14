@@ -13,7 +13,7 @@ from models.yandex.get_user_data_model import GetUserDataResponse
 from services.base_service import BaseService
 from utils.data_extraction import extract_deleted_folder_path_from_trash
 from utils.data_generators import GenerateRandomTexts
-from utils.file_uploader import YandexFileUploader
+from utils.yandex_file_manager import YandexFileManager
 
 
 class YandexService(BaseService):
@@ -32,12 +32,14 @@ class YandexService(BaseService):
         self.restore = YandexEndpoints.DISK_TRASH_RESTORE
         self.upload = YandexEndpoints.DISK_UPLOAD
         self.copy = YandexEndpoints.DISK_COPY
+        self.download = YandexEndpoints.DISK_DOWNLOAD
 
         self.resources_client = APIClient(self.resources, headers=headers)
         self.trash_client = APIClient(self.trash, headers=headers)
         self.restore_client = APIClient(self.restore, headers=headers)
         self.upload_client = APIClient(self.upload, headers=headers)
         self.copy_client = APIClient(self.copy, headers=headers)
+        self.download_client = APIClient(self.download, headers=headers)
 
     def get_authorized_user(self):
         return self.client.get_one(
@@ -76,8 +78,6 @@ class YandexService(BaseService):
         parameters = {'permanently': permanently}
         if params is not None:
             parameters.update(params)
-
-        print(f'PARAMETERS {parameters}')
         return self.resources_client.delete(
             response_model=SuccessApiResponse,
             error_model=YandexApiError,
@@ -105,16 +105,11 @@ class YandexService(BaseService):
             error_model=YandexApiError,
             headers=self.headers
         )
-
-        print("STATUS:", items_in_trash.status_code)
         if items_in_trash.response_body:
-            print(repr(items_in_trash.response_body))
             folder_path = extract_deleted_folder_path_from_trash(
                 items_in_trash.response_body, params['path']
             )
-            print("FOUND:", folder_path)
             return folder_path
-        print("ERROR:", items_in_trash.error)
         return False
 
     def check_folder_exists(self, params: dict) -> bool:
@@ -176,7 +171,7 @@ class YandexService(BaseService):
             path_to_local_file: str,
             upload_url: str
     ) -> FullAPIResponse[SuccessApiResponse, YandexApiError]:
-        response = YandexFileUploader.upload_file(
+        response = YandexFileManager.upload_file(
             path_to_local_file,
             upload_url
         )
@@ -212,3 +207,34 @@ class YandexService(BaseService):
         params = {'path': foldername}
         if self.check_folder_exists(params):
             self.delete_folder(True, params)
+
+    def request_download_link(
+            self,
+            path_to_file: dict
+    ) -> FullAPIResponse[SuccessApiResponse, YandexApiError]:
+        return self.download_client.get_one(
+            response_model=SuccessApiResponse,
+            error_model=YandexApiError,
+            params=path_to_file,
+            headers=self.headers
+        )  # type: ignore
+
+    def download_file(
+            self,
+            download_link: str,
+            filename: str
+    ) -> FullAPIResponse[SuccessApiResponse, YandexApiError]:
+        response = YandexFileManager.download_file(
+            download_link, self.headers, filename
+        )
+        return response
+
+    def compare_files(
+            self,
+            local_filename: str,
+            downloaded_filename: str
+    ):
+        return YandexFileManager.compare_files(
+            local_filename,
+            downloaded_filename
+        )

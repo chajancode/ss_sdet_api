@@ -58,5 +58,41 @@ class TestUploadCopyDownloadFile:
         yandex_service.delete_folder_if_exists(output_folder)
         remove_text_file(filename)
 
-    def test_download_file(self):
-        pass
+    def test_download_file(
+            self,
+            yandex_service: YandexService
+    ):
+        filename = 'data.txt'
+        downloaded_filename = 'data_downloaded.txt'
+        yandex_disk_folder = 'sdet_data'
+        upload_file_path = {'path': f'{yandex_disk_folder}/{filename}'}
+
+        yandex_service.delete_folder_if_exists(yandex_disk_folder)
+        create_text_file(filename)
+        yandex_service.create_folder(params={'path': yandex_disk_folder})
+
+        upload_link = yandex_service.request_upload_link(
+            params=upload_file_path
+        )
+        assert upload_link.response_body
+        upload_result = yandex_service.upload_file(
+            filename, upload_link.response_body.href
+        )
+        assert upload_result.status_code == 201
+
+        download_link = yandex_service.request_download_link(upload_file_path)
+        assert download_link.status_code == 200
+        assert download_link.response_body
+
+        yandex_service.download_file(
+            download_link.response_body.href,
+            downloaded_filename
+        )
+        are_equal, message = yandex_service.compare_files(
+            filename, downloaded_filename
+        )
+        assert are_equal, message
+
+        yandex_service.delete_folder_if_exists(yandex_disk_folder)
+        remove_text_file(filename)
+        remove_text_file(downloaded_filename)
