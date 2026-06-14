@@ -11,3 +11,5 @@ class YandexEndpoints:
     DISK_RESOURCES = f'{DISK_ENDPOINT}resources'
     DISK_TRASH = f'{DISK_ENDPOINT}trash/resources'
     DISK_TRASH_RESTORE = f'{DISK_TRASH}/restore'
+    DISK_UPLOAD = f'{DISK_RESOURCES}/upload'
+    DISK_COPY = f'{DISK_RESOURCES}/copy'

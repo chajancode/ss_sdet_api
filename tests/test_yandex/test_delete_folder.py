@@ -1,3 +1,5 @@
+import time
+
 from services.yandex_service import YandexService
 from utils.data_generators import GenerateRandomTexts
 
@@ -13,6 +15,7 @@ class TestDeleteFolder:
         result = yandex_service.delete_folder(params=params)
         assert result.status_code == 204
 
+        time.sleep(2)
         folder_in_storage = yandex_service.folder_in_storage(params=params)
         assert folder_in_storage.status_code == 404
 

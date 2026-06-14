@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ResourceModel(BaseModel):
+class FolderModel(BaseModel):
     path: str
     type: str
     name: str
@@ -24,4 +24,11 @@ class Embedded(BaseModel):
 
 class TrashModel(BaseModel):
     embedded: Optional[Embedded] = Field(None, alias='_embedded')
+    model_config = ConfigDict(extra='ignore')
+
+
+class FileModel(BaseModel):
+    name: str
+    mime_type: str
+    media_type: str
     model_config = ConfigDict(extra='ignore')
