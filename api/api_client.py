@@ -112,6 +112,7 @@ class APIClient:
     def post(
                 self,
                 response_model: Type[M],
+                url: Optional[str] = None,
                 data: Optional[dict] = None,
                 params: Optional[dict] = None,
                 error_model: Optional[Type[E]] = None,
@@ -129,6 +130,7 @@ class APIClient:
 
         return self._request(
                 method='POST',
+                url=url,
                 params=params,
                 data=data,
                 response_model=response_model,
@@ -195,6 +197,7 @@ class APIClient:
     def delete(
                 self,
                 response_model: Type[M],
+                url: Optional[str] = None,
                 data: Optional[dict] = None,
                 id: Optional[int] = None,
                 params: Optional[dict] = None,
@@ -214,6 +217,7 @@ class APIClient:
         """
         return self._request(
                 method='DELETE',
+                url=url,
                 id=id,
                 data=data,
                 params=params,
@@ -250,12 +254,14 @@ class APIClient:
     def get_one(
         self,
         response_model: Type[M],
+        url: Optional[str] = None,
         params: Optional[dict] = None,
         headers: Optional[dict] = None,
         error_model: Optional[Type[E]] = None
     ) -> FullAPIResponse[M, BaseModel]:
         return self._request(
             method='GET',
+            url=url,
             response_model=response_model,
             params=params,
             headers=headers,

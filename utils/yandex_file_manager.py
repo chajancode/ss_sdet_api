@@ -122,8 +122,10 @@ class YandexFileManager:
         local_filename: str,
         downloaded_filename: str
     ) -> tuple[bool, str]:
-        local_file = open(local_filename).read()
-        downloaded_file = open(downloaded_filename).read()
+        with open(local_filename) as file:
+            local_file = file.read()
+        with open(downloaded_filename) as file:
+            downloaded_file = file.read()
         match local_file == downloaded_file:
             case True:
                 return True, 'Содержимое файлов одинаково'

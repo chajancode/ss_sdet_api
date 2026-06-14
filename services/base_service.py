@@ -147,5 +147,5 @@ class BaseService(Generic[D]):
             error_model: Type[BaseModel]
     ) -> FullAPIResponse[M, BaseModel]:
         return self.client.get_one(
-            response_model, params, error_model=error_model
+            response_model, params=params, error_model=error_model
         )  # type: ignore
