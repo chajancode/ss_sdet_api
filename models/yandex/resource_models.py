@@ -32,3 +32,10 @@ class FileModel(BaseModel):
     mime_type: str
     media_type: str
     model_config = ConfigDict(extra='ignore')
+
+
+class FilesListModel(BaseModel):
+    items: list[dict]
+    limit: int
+    offset: int | None = None
+    model_config = ConfigDict(extra='ignore')

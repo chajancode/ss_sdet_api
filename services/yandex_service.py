@@ -8,7 +8,12 @@ from models.yandex.success_api_response_models import (
                                     SuccessApiResponse,
                                     SuccessGetUploadUrl
                                 )
-from models.yandex.resource_models import FileModel, FolderModel, TrashModel
+from models.yandex.resource_models import (
+                                    FileModel,
+                                    FilesListModel,
+                                    FolderModel,
+                                    TrashModel
+                                )
 from models.yandex.get_user_data_model import GetUserDataResponse
 from utils.data_extraction import extract_deleted_folder_path_from_trash
 from utils.data_generators import GenerateRandomTexts
@@ -230,3 +235,27 @@ class YandexService:
             local_filename,
             downloaded_filename
         )
+
+    def get_files_list(
+            self,
+            params: Optional[dict] = None
+    ) -> FullAPIResponse[FilesListModel, YandexApiError]:
+        return self.client.get_one(
+            response_model=FilesListModel,
+            error_model=YandexApiError,
+            headers=self.headers,
+            params=params,
+            url=ye.DISK_FILES
+        )  # type: ignore
+
+    def upload(
+            self,
+            local_path: str,
+            remote_path: str
+    ) -> FullAPIResponse[SuccessApiResponse, YandexApiError]:
+        link = self.request_upload_link({'path': remote_path})
+        if link.response_body is None:
+            raise RuntimeError(
+                f'не удалось прлучить ссылку для загрузки: {remote_path}'
+            )
+        return self.upload_file(local_path, link.response_body.href)
