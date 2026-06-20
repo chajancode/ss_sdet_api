@@ -1,2 +1,5 @@
 [tool.pyright]
 reportPrivateImportUsage = "none"
+
+[tool.ruff.lint]
+select = ["T20"]

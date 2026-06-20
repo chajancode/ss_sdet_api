@@ -70,7 +70,7 @@ class BaseService(Generic[D]):
             FullAPIResponse[M]: Ответ от APIClient (объект с полями \
             status_code, response_body и др.).
         """
-        response = self.client.post(test_data, response_model)
+        response = self.client.post(response_model, data=test_data)
 
         if response.status_code == 201:
             self._last_created_id = response.response_body.id  # type: ignore
@@ -139,3 +139,13 @@ class BaseService(Generic[D]):
             FullAPIResponse[M]: Ответ с кодом статуса и телом ответа.
         """
         return self.client.get_by_id(id, response_model, params)
+
+    def get_one(
+            self,
+            response_model: Type[M],
+            params: dict,
+            error_model: Type[BaseModel]
+    ) -> FullAPIResponse[M, BaseModel]:
+        return self.client.get_one(
+            response_model, params=params, error_model=error_model
+        )  # type: ignore

@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, TypeVar
+from typing import IO, List, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel, TypeAdapter
 from requests import Session
@@ -45,7 +45,9 @@ class APIClient:
                 method: str,
                 response_model: Type[M],
                 id: Optional[int] = None,
-                data: Optional[dict] = None,
+                url: Optional[str] = None,
+                data: Union[dict, IO[bytes], None] = None,
+                json: Optional[dict] = None,
                 params: Optional[dict] = None,
                 headers: Optional[dict] = None,
                 error_model: Optional[Type[E]] = None,
@@ -76,14 +78,17 @@ class APIClient:
         if error_model is None:
             error_model = WordPressError  # type: ignore
 
-        url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
+        if url is None:
+            url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
+
         response = self.session.request(
             method=method,
             url=url,
-            json=data,
+            json=json,
             params=params,
             auth=self.auth,
-            headers=headers
+            headers=headers,
+            data=data
         )
         if 200 <= response.status_code < 300:
             try:
@@ -106,8 +111,11 @@ class APIClient:
 
     def post(
                 self,
-                data: dict,
-                response_model: Type[M]
+                response_model: Type[M],
+                url: Optional[str] = None,
+                data: Optional[dict] = None,
+                params: Optional[dict] = None,
+                error_model: Optional[Type[E]] = None,
     ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет POST-запрос.
@@ -122,17 +130,22 @@ class APIClient:
 
         return self._request(
                 method='POST',
+                url=url,
+                params=params,
                 data=data,
-                response_model=response_model
-
+                response_model=response_model,
+                error_model=error_model,
+                headers=self.headers
         )
 
     def put(
         self,
         response_model: Type[M],
+        url: Optional[str] = None,
         params: Optional[dict] = None,
         headers: Optional[dict] = None,
-        error_model: Optional[Type[E]] = None
+        error_model: Optional[Type[E]] = None,
+        data: Union[dict, IO[bytes], None] = None
     ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет PUT-запрос.
@@ -148,6 +161,8 @@ class APIClient:
 
         return self._request(
                 method='PUT',
+                url=url,
+                data=data,
                 response_model=response_model,
                 params=params,
                 headers=headers,
@@ -182,6 +197,7 @@ class APIClient:
     def delete(
                 self,
                 response_model: Type[M],
+                url: Optional[str] = None,
                 data: Optional[dict] = None,
                 id: Optional[int] = None,
                 params: Optional[dict] = None,
@@ -201,6 +217,7 @@ class APIClient:
         """
         return self._request(
                 method='DELETE',
+                url=url,
                 id=id,
                 data=data,
                 params=params,
@@ -237,12 +254,14 @@ class APIClient:
     def get_one(
         self,
         response_model: Type[M],
+        url: Optional[str] = None,
         params: Optional[dict] = None,
         headers: Optional[dict] = None,
         error_model: Optional[Type[E]] = None
     ) -> FullAPIResponse[M, BaseModel]:
         return self._request(
             method='GET',
+            url=url,
             response_model=response_model,
             params=params,
             headers=headers,
@@ -259,7 +278,7 @@ class APIClient:
             url=self.endpoint,
             params=params,
             auth=self.auth,
-            headers={'Accept': 'application/json'}
+            headers=self.headers
         )
         if 200 <= response.status_code < 300:
             parsed_body = TypeAdapter(
