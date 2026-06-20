@@ -14,3 +14,4 @@ class YandexEndpoints:
     DISK_UPLOAD = f'{DISK_RESOURCES}/upload'
     DISK_COPY = f'{DISK_RESOURCES}/copy'
     DISK_DOWNLOAD = f'{DISK_RESOURCES}/download'
+    DISK_FILES = f'{DISK_RESOURCES}/files'
