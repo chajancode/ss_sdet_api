@@ -30,8 +30,7 @@ class PostsService(BaseService[PostsDao]):
 
     Args:
         auth_data (dict): Данные для HTTP Basic аутентификации.
-        dao (PostsDao): DAO для доступа к таблице постов. По умолчанию
-            создаётся новый экземпляр PostsDao.
+        dao (PostsDao): DAO для доступа к таблице постов.
     """
     def __init__(self, auth_data: dict, dao: PostsDao) -> None:
         """
@@ -42,8 +41,7 @@ class PostsService(BaseService[PostsDao]):
 
         Args:
             auth_data (dict): Словарь с полями 'username' и 'password'.
-            dao (CommentsDao): Экземпляр PostsDao. При создании без аргумента
-                используется новый экземпляр.
+            dao (PostsDao): Экземпляр PostsDao.
         """
         super().__init__(wpe.POSTS_ENDPOINT, auth_data, dao)
 
@@ -52,7 +50,7 @@ class PostsService(BaseService[PostsDao]):
         Возвращает модель поста из БД по ID.
 
         Args:
-            comment_id (int): Идентификатор поста или None.
+            post_id (int | None): Идентификатор поста или None.
 
         Returns:
             DBPostData | None
@@ -90,19 +88,18 @@ class PostsService(BaseService[PostsDao]):
 
     def check_post_patching(self, id: int, test_data: dict):
         """
-        Обновляет последний созданный пост через API и сверяет с БД.
+        Обновляет пост через API по переданному id и сверяет с БД.
 
-        Использует сохранённый `_last_created_id` для выполнения
-        PATCH-запроса. После обновления получает обновлённую запись из БД
-        и возвращает результат.
+        Выполняет PATCH-запрос для указанного поста, затем получает
+        обновлённую запись из БД и возвращает результат.
 
         Args:
+            id (int): Идентификатор обновляемого поста.
             test_data (dict): Словарь с полями для обновления.
 
         Returns:
-            PostsServiceResponse: Объект, содержащий статус-код,
-                тело ответа API и запись из БД (`BPostData`)
-                для передачи в тесты.
+            PostsServiceResponse: Объект со статус-кодом, телом ответа API
+                и записью из БД (DBPostData) для передачи в тесты.
         """
         response = self.patch(
             id,  # type: ignore
@@ -117,14 +114,14 @@ class PostsService(BaseService[PostsDao]):
 
     def check_post_deletion(self, id: int, test_data: dict):
         """
-        Удаляет последний созданный пост через API и проверяет
-        отсутствие в БД.
+        Удаляет пост через API по переданному id и проверяет отсутствие в БД.
 
-        - Выполняет DELETE-запрос по сохранённому ID поста.
-        - Ищет запись в БД по тому же ID (ожидается, что её уже нет).
+        - Выполняет DELETE-запрос по указанному id поста.
+        - Ищет запись в БД (ожидается, что её уже нет).
         - Возвращает статус удаления и запись из БД.
 
         Args:
+            id (int): Идентификатор удаляемого поста.
             test_data (dict): Модификаторы DELETE-запроса.
 
         Returns:
@@ -151,6 +148,17 @@ class PostsService(BaseService[PostsDao]):
             response_model: Type[M],
             params: dict | None = None
             ):
+        """
+        Получает один пост по id через GET-запрос.
+
+        Args:
+            id (int): Идентификатор поста.
+            response_model (Type[M]): Модель для десериализации ответа.
+            params (dict | None): Параметры строки запроса.
+
+        Returns:
+            FullAPIResponse[M]: Ответ со статус-кодом и телом поста.
+        """
         return self.get_by_id(id, response_model, params)
 
     def get_many_posts(

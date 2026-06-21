@@ -5,7 +5,7 @@ from requests.auth import HTTPBasicAuth
 
 from api.api_client import APIClient
 from dao.base_dao import BaseDao
-from models.posts.api_responses_models import FullAPIResponse
+from models.posts.api_responses_models import FullAPIResponse, WordPressError
 
 
 M = TypeVar('M', bound=BaseModel)
@@ -23,6 +23,7 @@ class BaseService(Generic[D]):
         auth_data (dict): Данные для HTTP Basic аутентификации.
         endpoint (str): Базовый URL API-эндпоинта.
         dao (D): Экземпляр DAO для работы с БД.
+        headers (dict): Заголовки, добавляемые к запросам по умолчанию.
     """
     def __init__(
                 self,
@@ -35,13 +36,14 @@ class BaseService(Generic[D]):
         Инициализирует сервис.
 
         - Создаёт HTTPBasicAuth из переданных данных
-        - Инициализирует APIClient
+        - Инициализирует APIClient с моделью ошибки WordPressError
         - Сохраняет DAO
 
         Args:
             auth_data (dict): Словарь с полями 'username' и 'password'.
             endpoint(str): Базовый URL API.
             dao (BaseDao): Экземпляр DAO.
+            headers (dict): Заголовки запросов по умолчанию.
         """
         if auth_data is not None:
             self.auth = HTTPBasicAuth(**auth_data)
@@ -50,7 +52,12 @@ class BaseService(Generic[D]):
         self._last_created_id = None
         self.dao = dao
         self.headers = headers
-        self.client = APIClient(endpoint, self.auth, headers=self.headers)
+        self.client = APIClient(
+                        endpoint,
+                        self.auth,
+                        headers=self.headers,
+                        error_model=WordPressError
+        )
 
     def create(
             self, test_data: dict, response_model: Type[M]
@@ -119,6 +126,16 @@ class BaseService(Generic[D]):
             response_model: Type[M],
             params: Optional[dict] = None
     ) -> FullAPIResponse[list[M], BaseModel]:
+        """
+        Получает список записей через GET-запрос.
+
+        Args:
+            response_model (BaseModel): Модель одного элемента списка.
+            params (Optional[dict]): Параметры строки запроса.
+
+        Returns:
+            FullAPIResponse[list[M]]: Ответ со списком записей.
+        """
         return self.client.get_many(response_model, params)
 
     def get_by_id(
@@ -146,6 +163,17 @@ class BaseService(Generic[D]):
             params: dict,
             error_model: Type[BaseModel]
     ) -> FullAPIResponse[M, BaseModel]:
+        """
+        Получает одну запись через GET-запрос по заданным параметрам.
+
+        Args:
+            response_model (BaseModel): Модель для десериализации ответа.
+            params (dict): Параметры строки запроса.
+            error_model (BaseModel): Модель для десериализации тела ошибки.
+
+        Returns:
+            FullAPIResponse[M]: Ответ с кодом статуса и телом/ошибкой.
+        """
         return self.client.get_one(
             response_model, params=params, error_model=error_model
         )  # type: ignore

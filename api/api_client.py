@@ -1,10 +1,10 @@
 from typing import IO, List, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel, TypeAdapter
-from requests import Session
+from requests import Response, Session
 from requests.auth import HTTPBasicAuth
 
-from models.posts.api_responses_models import FullAPIResponse, WordPressError
+from models.posts.api_responses_models import FullAPIResponse
 
 M = TypeVar('M', bound=BaseModel)
 E = TypeVar('E', bound=BaseModel)
@@ -25,20 +25,57 @@ class APIClient:
             self,
             endpoint: str,
             auth: Optional[HTTPBasicAuth] = None,
-            headers: Optional[dict[str, str]] = None
+            headers: Optional[dict[str, str]] = None,
+            error_model: Optional[Type[BaseModel]] = None
             ) -> None:
         """
         Инициализирует API-клиент.
 
         Args:
-            endpoint (str): Базовый URL эндпоинта
+            endpoint (str): Базовый URL эндпоинта.
             auth (HTTPBasicAuth): Объект HTTPBasicAuth с именем пользователя \
             и паролем.
+            headers (dict): Заголовки, добавляемые к запросам по умолчанию.
+            error_model (Type[BaseModel]): Модель по умолчанию для разбора \
+            тела ошибочного ответа. Используется, когда конкретный вызов не \
+            передал свой error_model. Если не задана, тело ошибки не \
+            десериализуется (error остаётся None).
         """
         self.session = Session()
         self.endpoint: str = endpoint
         self.auth = auth
         self.headers = headers
+        self.error_model = error_model
+
+    @staticmethod
+    def _parse_error(
+        response: Response,
+        error_model: Optional[Type[E]]
+    ) -> Optional[E]:
+        """
+        Преобразует тело ошибочного ответа в error_model.
+        Args:
+            response (Response): Ответ requests с кодом >= 400.
+            error_model (Type[BaseModel] | None): Модель для тела \
+            ошибки.
+
+        Returns:
+            Optional[E]: Экземпляр error_model, либо None если модель не \
+            задана или тело ответа пустое.
+
+        Raises:
+            RuntimeError: Если тело есть, но не преобразуется в модель. \
+            В сообщение включаются статус-код и сырое тело ответа.
+        """
+        if error_model is None or not response.text:
+            return None
+        try:
+            return error_model(**response.json())
+        except Exception as e:
+            raise RuntimeError(
+                f"Ошибка парсинга тела ошибки "
+                f"(статус {response.status_code}): {response.text!r}"
+            ) from e
 
     def _request(
                 self,
@@ -66,17 +103,19 @@ class APIClient:
             ответа.
             id (int): Идентификатор для добавления в запрос.
             data: Данные для тела запроса.
+            error_model (Type[BaseModel]): Модель тела ошибки. Если не \
+            передана, берктся error_model клиента.
 
         Returns:
             FullAPIResponse[M]: Объект, содержащий код статуса и \
             десериализованное тело.
 
         Raises:
-            RuntimeError: Если статус-код ответа >= 400. В сообщение \
-            включается код и текст ответа.
+            RuntimeError: Если тело ответа не удалось десериализовать \
+            как успешное (в response_model), так и ошибочное (в error_model).
         """
         if error_model is None:
-            error_model = WordPressError  # type: ignore
+            error_model = self.error_model  # type: ignore
 
         if url is None:
             url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
@@ -101,7 +140,7 @@ class APIClient:
                 raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
         else:
             parsed_body = None
-            error = error_model(**response.json())  # type: ignore
+            error = self._parse_error(response, error_model)  # type: ignore
 
         return FullAPIResponse[M, E](
                 status_code=response.status_code,
@@ -121,11 +160,16 @@ class APIClient:
         Выполняет POST-запрос.
 
         Args:
-            data (dict): Данные новой записи.
             response_model (BaseModel): Модель для десериализации тела ответа.
+            url (str): Полный URL запроса. Если не задан, используется \
+            endpoint клиента.
+            data (dict): Данные тела запроса.
+            params (dict): Параметры строки запроса.
+            error_model (Type[BaseModel]): Модель тела ошибки. Если не \
+            передана, берётся error_model клиента.
 
         Returns:
-            FullAPIResponse[M]: Ответ с кодом статуса и телом запроса.
+            FullAPIResponse[M]: Ответ с кодом статуса и телом/ошибкой.
         """
 
         return self._request(
@@ -151,12 +195,17 @@ class APIClient:
         Выполняет PUT-запрос.
 
         Args:
-            data (dict): Данные новой записи.
             response_model (BaseModel): Модель для десериализации тела ответа.
-
+            url (str): Полный URL запроса. Если не задан, используется \
+            endpoint клиента.
+            params (dict): Параметры строки запроса.
+            headers (dict): Заголовки запроса.
+            error_model (Type[BaseModel]): Модель тела ошибки. Если не \
+            передана, берётся error_model клиента.
+            data (dict | IO[bytes]): Данные тела запроса.
 
         Returns:
-            FullAPIResponse[M]: Ответ с кодом статуса и телом запроса.
+            FullAPIResponse[M]: Ответ с кодом статуса и телом/ошибкой.
         """
 
         return self._request(
@@ -173,25 +222,35 @@ class APIClient:
                 self,
                 id: int,
                 data: dict,
-                response_model: Type[M]
+                response_model: Type[M],
+                params: Optional[dict] = None,
+                headers: Optional[dict] = None,
+                error_model: Optional[Type[E]] = None
     ) -> FullAPIResponse[M, BaseModel]:
         """
         Выполняет PATCH-запрос.
 
         Args:
-            id (int): Идентификатор обновляемой записи.
+            id (int): Идентификатор обновляемой записи (подставляется в URL).
             data (dict): Данные для обновления записи.
             response_model (BaseModel): Модель для десериализации тела ответа.
+            params (dict): Параметры строки запроса.
+            headers (dict): Заголовки запроса.
+            error_model (Type[BaseModel]): Модель тела ошибки. Если не \
+            передана, берётся error_model клиента.
 
         Returns:
-            FullAPIResponse[M]: Ответ с кодом статуса и тела запроса.
+            FullAPIResponse[M]: Ответ с кодом статуса и телом/ошибкой.
         """
 
         return self._request(
                 method='PATCH',
                 id=id,
                 data=data,
+                params=params,
+                headers=headers,
                 response_model=response_model,
+                error_model=error_model  # type: ignore
         )
 
     def delete(
@@ -208,12 +267,18 @@ class APIClient:
         Выполняет DELETE-запрос.
 
         Args:
-            id (int): Идентификатор удаляемого ресурса.
-            data (dict): Модификаторы запроса.
             response_model (BaseModel): Модель для десериализации тела ответа.
+            url (str): Полный URL запроса. Если не задан, используется \
+            endpoint клиента (с подстановкой id, если передан).
+            data (dict): Модификаторы запроса в теле.
+            id (int): Идентификатор удаляемого ресурса (подставляется в URL).
+            params (dict): Параметры строки запроса.
+            headers (dict): Заголовки запроса.
+            error_model (Type[BaseModel]): Модель тела ошибки. Если не \
+            передана, берётся error_model клиента.
 
         Returns:
-            FullAPIResponse[M]: Ответ с кодом статуса и телом запроса.
+            FullAPIResponse[M]: Ответ с кодом статуса и телом/ошибкой.
         """
         return self._request(
                 method='DELETE',
@@ -259,6 +324,20 @@ class APIClient:
         headers: Optional[dict] = None,
         error_model: Optional[Type[E]] = None
     ) -> FullAPIResponse[M, BaseModel]:
+        """
+        Выполняет GET-запрос по URL.
+
+        Args:
+            response_model (BaseModel): Модель для десериализации тела ответа.
+            url (str): Полный URL запроса. Если не задан, используется \
+            endpoint клиента.
+            params (dict): Параметры строки запроса.
+            headers (dict): Заголовки запроса.
+            error_model (Type[BaseModel]): Модель тела ошибки.
+
+        Returns:
+            FullAPIResponse[M]: Ответ с кодом статуса и телом/ошибкой.
+        """
         return self._request(
             method='GET',
             url=url,
@@ -271,8 +350,25 @@ class APIClient:
     def get_many(
         self,
         response_model: Type[M],
-        params: Optional[dict] = None
+        params: Optional[dict] = None,
+        error_model: Optional[Type[E]] = None
     ) -> FullAPIResponse[List[M], BaseModel]:
+        """
+        Выполняет GET-запрос, ожидающий в ответе список объектов.
+
+        Args:
+            response_model (BaseModel): Модель одного элемента списка. Тело \
+            преобразуетмся как List[response_model].
+            params (dict): Параметры строки запроса.
+            error_model (Type[BaseModel]): Модель тела ошибки. Если не \
+            передана, берётся error_model клиента.
+
+        Returns:
+            FullAPIResponse[list[M]]: Ответ со списком объектов и телом \
+            ошибки.
+        """
+        if error_model is None:
+            error_model = self.error_model  # type: ignore
         response = self.session.request(
             method='GET',
             url=self.endpoint,
@@ -286,8 +382,7 @@ class APIClient:
             error = None
         else:
             parsed_body = []
-            error = WordPressError(
-                **response.json()) if response.text else None
+            error = self._parse_error(response, error_model)
         return FullAPIResponse(
             status_code=response.status_code,
             response_body=parsed_body,
