@@ -1,6 +1,10 @@
 
 
 from services.yandex_service import YandexService
+from tests.test_yandex.assertions.assertions import (
+                                    YandexError,
+                                    assert_api_error
+                                )
 
 
 class TestGetUserData:
@@ -16,8 +20,4 @@ class TestGetUserData:
     def test_authorize_without_token(
             self, yandex_service: YandexService):
         result = yandex_service.get_unauthorized_user()
-        assert result.status_code == 401
-        assert result.error is not None
-        assert result.error.error
-        assert result.error.description
-        assert result.error.message
+        assert_api_error(result, 401, YandexError.UNAUTHORIZED)

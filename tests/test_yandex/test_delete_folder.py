@@ -1,4 +1,8 @@
 from services.yandex_service import YandexService
+from tests.test_yandex.assertions.assertions import (
+                                    YandexError,
+                                    assert_api_error
+                                )
 from utils.data_generators import GenerateRandomTexts
 
 
@@ -18,6 +22,8 @@ class TestDeleteFolder:
 
         folder_in_trash = yandex_service.is_folder_in_trash(params=params)
         assert folder_in_trash
+
+        yandex_service.empty_trash()
 
     def test_delete_permanently(
             self,
@@ -43,9 +49,7 @@ class TestDeleteFolder:
         params = yandex_service.get_folder_name_doesnt_exist()
 
         result = yandex_service.delete_folder(params=params)
-        assert result.status_code == 404
-        assert result.error is not None
-        assert result.error.error == 'DiskNotFoundError'
+        assert_api_error(result, 404, YandexError.NOT_FOUND)
 
     def test_delete_folder_without_params(
             self,
@@ -53,6 +57,4 @@ class TestDeleteFolder:
     ):
 
         result = yandex_service.delete_folder()
-        assert result.status_code == 400
-        assert result.error is not None
-        assert result.error.error == 'FieldValidationError'
+        assert_api_error(result, 400, YandexError.FIELD_VALIDATION)

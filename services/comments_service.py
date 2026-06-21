@@ -18,14 +18,12 @@ class CommentsService(BaseService[CommentsDao]):
 
     - Предоставляет методы для создания, обновления и удаления комментариев
     с проверкой соответствия данных в БД.
-    - Инкапсулирует логику вызовов API
-    и чтения из DAO.
+    - Инкапсулирует логику вызовов API и чтения из DAO.
 
     Args:
         auth_data (dict): Данные для HTTP Basic аутентификации \
         (username/password).
-        dao (CommentsDao): DAO для доступа к таблице комментариев. По \
-        умолчанию создаётся новый экземпляр CommentsDao.
+        dao (CommentsDao): DAO для доступа к таблице комментариев.
     """
     def __init__(
             self, auth_data: dict, dao: CommentsDao
