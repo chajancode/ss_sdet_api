@@ -1,4 +1,8 @@
 from services.yandex_service import YandexService
+from tests.test_yandex.assertions.assertions import (
+                                    YandexError,
+                                    assert_api_error
+                                )
 from utils.file_tools import create_text_file, remove_text_file
 
 
@@ -48,11 +52,7 @@ class TestUploadCopyDownloadFile:
         repeat_copy_result = yandex_service.copy_file(
             input_file_path, output_file_path
         )
-        assert repeat_copy_result.status_code == 409
-        assert repeat_copy_result.error is not None
-        assert repeat_copy_result.error.error
-        assert repeat_copy_result.error.description
-        assert repeat_copy_result.error.message
+        assert_api_error(repeat_copy_result, 409, YandexError.RESOURSE_EXISTS)
 
         yandex_service.delete_folder_if_exists(input_folder)
         yandex_service.delete_folder_if_exists(output_folder)

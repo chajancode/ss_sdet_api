@@ -1,9 +1,12 @@
 import pytest
 
+
 from config.credentials import API_USERNAME, API_PASSWORD
 from database.database import Database
 from config.db_config import db_settings
 from database.database_session import DatabaseSession
+
+pytest.register_assert_rewrite('tests.test_yandex.assertions.assertions')
 
 pytest_plugins = [
     'tests.fixtures.posts_fixtures',

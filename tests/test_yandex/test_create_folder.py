@@ -1,5 +1,10 @@
 from services.yandex_service import YandexService
 from utils.data_generators import GenerateRandomTexts
+from tests.test_yandex.assertions.assertions import (
+                                    YandexError,
+                                    assert_api_error,
+                                    assert_success_link
+                                )
 
 
 class TestCreateFolder:
@@ -10,11 +15,7 @@ class TestCreateFolder:
         params = {'path': GenerateRandomTexts.generate_word()}
         result = yandex_service.create_folder(params=params)
 
-        assert result.status_code == 201
-        assert result.response_body is not None
-        assert result.response_body.method == 'GET'
-        assert result.response_body.href
-        assert isinstance(result.response_body.templated, bool)
+        assert_success_link(result, 201)
 
         yandex_service.delete_folder(permanently=True, params=params)
 
@@ -25,11 +26,7 @@ class TestCreateFolder:
         params = {'path': '/'}
         result = yandex_service.create_folder(params=params)
 
-        assert result.status_code == 409
-        assert result.error is not None
-        assert result.error.error == 'DiskPathDoesntExistsError'
-        assert result.error.description
-        assert result.error.message
+        assert_api_error(result, 409, YandexError.PATH_DOESNT_EXIST)
 
     def test_create_folder_without_folder_name(
             self,
@@ -37,11 +34,7 @@ class TestCreateFolder:
     ):
         result = yandex_service.create_folder()
 
-        assert result.status_code == 400
-        assert result.error is not None
-        assert result.error.error == 'FieldValidationError'
-        assert result.error.description
-        assert result.error.message
+        assert_api_error(result, 400, YandexError.FIELD_VALIDATION)
 
     def test_create_folder_with_existing_folder_name(
             self,
@@ -51,10 +44,6 @@ class TestCreateFolder:
         yandex_service.create_folder(params=params)
         result = yandex_service.create_folder(params=params)
 
-        assert result.status_code == 409
-        assert result.error is not None
-        assert result.error.error == 'DiskPathPointsToExistentDirectoryError'
-        assert result.error.description
-        assert result.error.message
+        assert_api_error(result, 409, YandexError.PATH_EXISTS)
 
         yandex_service.delete_folder(permanently=True, params=params)

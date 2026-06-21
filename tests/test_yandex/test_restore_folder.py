@@ -1,4 +1,9 @@
 from services.yandex_service import YandexService
+from tests.test_yandex.assertions.assertions import (
+                                    YandexError,
+                                    assert_api_error,
+                                    assert_success_link
+                                )
 from utils.data_generators import GenerateRandomTexts
 
 
@@ -12,11 +17,7 @@ class TestRestoreFolder:
         yandex_service.delete_folder(params=params)
 
         result = yandex_service.restore_deleted_folder(params=params)
-        assert result.status_code == 201
-        assert result.response_body is not None
-        assert result.response_body.method == 'GET'
-        assert result.response_body.href
-        assert isinstance(result.response_body.templated, bool)
+        assert_success_link(result, 201)
 
     def test_restore_folder_doesnt_exist(
             self,
@@ -25,8 +26,4 @@ class TestRestoreFolder:
         params = yandex_service.get_folder_name_doesnt_exist()
 
         result = yandex_service.restore_folder_doesnt_exist(params=params)
-        assert result.status_code == 404
-        assert result.error is not None
-        assert result.error.error == 'DiskNotFoundError'
-        assert result.error.description
-        assert result.error.message
+        assert_api_error(result, 404, YandexError.NOT_FOUND)

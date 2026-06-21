@@ -254,7 +254,7 @@ class YandexService:
 
     def empty_trash(self):
         """
-        Очищает корзину Яндекс-Диска (DELETE /trash/resources).
+        Очищает корзину Яндекс-Диска.
         """
         self.client.delete(
             response_model=SuccessApiResponse,
