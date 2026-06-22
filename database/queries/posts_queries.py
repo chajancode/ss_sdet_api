@@ -1,4 +1,9 @@
 class PostsQueries:
+    SELECT_BY_ID = """
+        SELECT post_title, post_content, post_status FROM wp_posts
+        WHERE ID = %s
+    """
+
     INSERT = """
         INSERT INTO wp_posts(
         post_author, post_date, post_date_gmt, post_content, post_title,

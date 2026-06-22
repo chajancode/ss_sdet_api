@@ -11,7 +11,7 @@ class YandexError:
 def assert_api_error(
         result,
         status_code: int,
-        error: str | None = None
+        error: str
 ) -> None:
     """
     Проверяет, что ответ - ошибка с заданным статусом и непустым телом.

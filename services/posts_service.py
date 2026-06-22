@@ -3,7 +3,7 @@ from typing import Type, TypeVar
 from pydantic import BaseModel
 
 from api.endpoints import WordPressEndpoints as wpe
-from dao.posts_dao import PostsDao
+from database.repositories.posts_repository import PostsRepository
 from models.posts.api_responses_models import FullAPIResponse
 from models.posts.posts_model import (
                         PostCreatedOrPatchedResponse,
@@ -14,36 +14,36 @@ from models.posts.posts_service_response_model import (
                         PostsServiceResponse
                     )
 from services.base_service import BaseService
-from utils.tuple_converter import tuple_to_post_model
 
 
 M = TypeVar('M', bound=BaseModel)
 
 
-class PostsService(BaseService[PostsDao]):
+class PostsService(BaseService):
     """
     Сервис для работы с постами.
 
     - Предоставляет методы для создания, обновления и удаления постов
     с проверкой соответствия данных в БД.
-    - Инкапсулирует логику вызовов API и чтения из DAO.
+    - Инкапсулирует логику вызовов API и чтения через репозиторий.
 
     Args:
         auth_data (dict): Данные для HTTP Basic аутентификации.
-        dao (PostsDao): DAO для доступа к таблице постов.
+        repository (PostsRepository): Репозиторий постов.
     """
-    def __init__(self, auth_data: dict, dao: PostsDao) -> None:
+    def __init__(self, auth_data: dict, repository: PostsRepository) -> None:
         """
         Инициализирует сервис постов.
 
-        Передаёт аутентификацию, эндпоинт и DAO в родительский класс
+        Передаёт аутентификацию и эндпоинт в родительский класс
         BaseService.
 
         Args:
             auth_data (dict): Словарь с полями 'username' и 'password'.
-            dao (PostsDao): Экземпляр PostsDao.
+            repository (PostsRepository): Репозиторий постов.
         """
-        super().__init__(wpe.POSTS_ENDPOINT, auth_data, dao)
+        super().__init__(wpe.POSTS_ENDPOINT, auth_data)
+        self.repository = repository
 
     def _get_db_record(self, post_id: int | None):
         """
@@ -57,10 +57,7 @@ class PostsService(BaseService[PostsDao]):
         """
         if post_id is None:
             return None
-        record = self.dao.get_post_by_id(post_id)  # type: ignore
-        if record is None:
-            return None
-        return tuple_to_post_model(record)
+        return self.repository.get_by_id(post_id)
 
     def check_post_creation(self, test_data: dict):
         """
@@ -133,9 +130,7 @@ class PostsService(BaseService[PostsDao]):
             test_data=test_data,
             response_model=PostDeletedResponse
         )
-        db_record = self._get_db_record(
-            self._last_created_id
-            ) if self._last_created_id else None
+        db_record = self._get_db_record(id)
         return PostsServiceDeleteResponse(
             status_code=response.status_code,
             response_body=response.response_body,

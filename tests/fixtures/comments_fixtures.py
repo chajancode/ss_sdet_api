@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 import pytest
 
-from dao.comments_dao import CommentsDao
+from database.dao.comments_dao import CommentsDao
 from database.database_session import DatabaseSession
 from database.repositories.comments_repository import CommentsRepository
 from models.comments.comments_fixtures_results import FilteredCommsResult
@@ -14,18 +14,18 @@ from utils.dict_creation import group_by_status
 
 
 @pytest.fixture(scope='session')
-def comments_dao(database):
-    return CommentsDao(database=database)
+def comments_dao(session):
+    return CommentsDao(session=session)
 
 
 @pytest.fixture(scope='session')
-def comments_service(auth_data, comments_dao):
-    return CommentsService(auth_data, comments_dao)
+def comments_repository(comments_dao):
+    return CommentsRepository(dao=comments_dao)
 
 
 @pytest.fixture(scope='session')
-def comments_repository(session):
-    return CommentsRepository(session)
+def comments_service(auth_data, comments_repository):
+    return CommentsService(auth_data, comments_repository)
 
 
 @pytest.fixture(scope='session')

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 import pytest
 
-from dao.posts_dao import PostsDao
+from database.dao.posts_dao import PostsDao
 from database.repositories.posts_repository import PostsRepository
 from models.posts.api_responses_models import FullAPIResponse, WordPressError
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
@@ -13,18 +13,18 @@ from utils.dict_creation import group_by_status
 
 
 @pytest.fixture(scope='session')
-def posts_dao(database) -> PostsDao:
-    return PostsDao(database=database)
+def posts_dao(session) -> PostsDao:
+    return PostsDao(session)
 
 
 @pytest.fixture(scope='session')
-def posts_service(auth_data, posts_dao) -> PostsService:
-    return PostsService(auth_data, posts_dao)
+def posts_repository(posts_dao) -> PostsRepository:
+    return PostsRepository(posts_dao)
 
 
 @pytest.fixture(scope='session')
-def posts_repository(session) -> PostsRepository:
-    return PostsRepository(session)
+def posts_service(auth_data, posts_repository) -> PostsService:
+    return PostsService(auth_data, posts_repository)
 
 
 @pytest.fixture(scope='session')
