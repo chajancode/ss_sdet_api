@@ -1,35 +1,30 @@
-from typing import Generic, Optional, Type, TypeVar
+from typing import Optional, Type, TypeVar
 
 from pydantic import BaseModel
 from requests.auth import HTTPBasicAuth
 
 from api.api_client import APIClient
-from dao.base_dao import BaseDao
 from models.posts.api_responses_models import FullAPIResponse, WordPressError
 
 
 M = TypeVar('M', bound=BaseModel)
-D = TypeVar('D', bound=BaseDao)
 
 
-class BaseService(Generic[D]):
+class BaseService:
     """
     Базовый сервис для работы с API через HTTP-клиент.
 
     Предоставляет общие методы для создания, изменения и удаления ресурсов.
-    Хранит DAO для доступа к данным.
 
     Args:
         auth_data (dict): Данные для HTTP Basic аутентификации.
         endpoint (str): Базовый URL API-эндпоинта.
-        dao (D): Экземпляр DAO для работы с БД.
         headers (dict): Заголовки, добавляемые к запросам по умолчанию.
     """
     def __init__(
                 self,
                 endpoint: str,
                 auth_data: Optional[dict[str, str]] = None,
-                dao: Optional[D] = None,
                 headers: Optional[dict[str, str]] = None
             ) -> None:
         """
@@ -37,12 +32,10 @@ class BaseService(Generic[D]):
 
         - Создаёт HTTPBasicAuth из переданных данных
         - Инициализирует APIClient с моделью ошибки WordPressError
-        - Сохраняет DAO
 
         Args:
             auth_data (dict): Словарь с полями 'username' и 'password'.
             endpoint(str): Базовый URL API.
-            dao (BaseDao): Экземпляр DAO.
             headers (dict): Заголовки запросов по умолчанию.
         """
         if auth_data is not None:
@@ -50,7 +43,6 @@ class BaseService(Generic[D]):
         else:
             self.auth = None
         self._last_created_id = None
-        self.dao = dao
         self.headers = headers
         self.client = APIClient(
                         endpoint,

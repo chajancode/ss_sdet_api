@@ -1,4 +1,4 @@
-from dao.posts_dao import PostsDao
+from database.dao.posts_dao import PostsDao
 from models.posts.db_record_model import DBPostData
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from utils.string_utils import to_slug
@@ -30,7 +30,7 @@ class PostsRepository:
         row = self.dao.select_by_id(post_id)
         if row is None:
             return None
-        return self._row_to_model(row)
+        return self._row_to_model(row)  # type: ignore
 
     def create(self, post: ExpectedPostModel) -> int:
         """Создаёт пост из модели, возвращает id."""

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 import pytest
 
-from dao.posts_dao import PostsDao
+from database.dao.posts_dao import PostsDao
 from database.repositories.posts_repository import PostsRepository
 from models.posts.api_responses_models import FullAPIResponse, WordPressError
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
