@@ -13,18 +13,18 @@ from utils.dict_creation import group_by_status
 
 
 @pytest.fixture(scope='session')
-def posts_dao(database) -> PostsDao:
-    return PostsDao(database=database)
+def posts_dao(session) -> PostsDao:
+    return PostsDao(session)
 
 
 @pytest.fixture(scope='session')
-def posts_service(auth_data, posts_dao) -> PostsService:
-    return PostsService(auth_data, posts_dao)
+def posts_repository(posts_dao) -> PostsRepository:
+    return PostsRepository(posts_dao)
 
 
 @pytest.fixture(scope='session')
-def posts_repository(session) -> PostsRepository:
-    return PostsRepository(session)
+def posts_service(auth_data, posts_repository) -> PostsService:
+    return PostsService(auth_data, posts_repository)
 
 
 @pytest.fixture(scope='session')

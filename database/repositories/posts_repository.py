@@ -1,34 +1,54 @@
-from database.database_session import DatabaseSession
-from database.queries.posts_queries import PostsQueries
+from dao.posts_dao import PostsDao
+from models.posts.db_record_model import DBPostData
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from utils.string_utils import to_slug
 
 
 class PostsRepository:
-    def __init__(self, session: DatabaseSession) -> None:
-        self.session = session
+    """
+    Репозиторий постов.
+
+    Работает в терминах домена: принимает и возвращает доменные модели,
+    а доступ к БД делегирует PostsDao. Преобразование строки БД в модель —
+    внутри репозитория.
+    """
+    def __init__(self, dao: PostsDao) -> None:
+        self.dao = dao
+
+    @staticmethod
+    def _row_to_model(row: tuple) -> DBPostData:
+        """
+        Преобразует строку БД в модель поста.
+        """
+        title, content, status = row
+        return DBPostData(title=title, content=content, status=status)
+
+    def get_by_id(self, post_id: int) -> DBPostData | None:
+        """
+        Возвращает пост как модель (или None, если не найден).
+        """
+        row = self.dao.select_by_id(post_id)
+        if row is None:
+            return None
+        return self._row_to_model(row)
 
     def create(self, post: ExpectedPostModel) -> int:
-        """
-        Создаёт один пост в БД, возвращает id
-        """
-        query = PostsQueries.INSERT
+        """Создаёт пост из модели, возвращает id."""
         params = (
             1, post.content, post.title, post.status,
             to_slug(post.title), 'post'
         )
-        result = self.session.execute(query, params)
-        if isinstance(result, int):
-            return result
-        else:
+        post_id = self.dao.insert(params)
+        if not isinstance(post_id, int):
             raise ValueError('БД не вернула id')
+        return post_id
 
     def create_many(
             self,
             posts: list[ExpectedPostModel]
     ) -> dict[int, ExpectedPostModel]:
         """
-        Создаёт несколько постов в БД, возвращает список с постами и их id
+        Создаёт несколько постов, возвращает словарь {id: модель}.
         """
         result = {}
         for post in posts:
@@ -39,14 +59,13 @@ class PostsRepository:
 
     def delete(self, post_id: int):
         """
-        Удаляет пост из БД по его id
+        Удаляет пост по его id.
         """
-        query = PostsQueries.DELETE
-        self.session.execute(query, (post_id,))
+        self.dao.delete(post_id)
 
     def delete_many(self, post_ids: list):
         """
-        Создаёт несколько постов из БД по списку id
+        Создаёт несколько постов по списку id.
         """
         for post_id in post_ids:
             self.delete(post_id)

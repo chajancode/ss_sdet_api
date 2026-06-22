@@ -1,30 +1,30 @@
+from typing import Any
+
+from mysql.connector.types import RowType
+
 from dao.base_dao import BaseDao
+from database.database_session import DatabaseSession
+from database.queries.posts_queries import PostsQueries
 
 
 class PostsDao(BaseDao):
     """
     DAO для работы с таблицей постов wp_posts.
 
-    Предоставляет методы для извлечения данных о постах.
+    Предоставляет методы для работы с постами.
     """
-    def get_post_by_id(self, id: int) -> list[tuple | None]:
-        """
-        Возвращает данные поста по его идентификатору.
+    def __init__(self, session: DatabaseSession) -> None:
+        self.session = session
 
-        Выполняет SELECT запрос к таблице wp_posts, извлекая
-        поля post_title, post_content, post_status для указанного ID.
+    def select_by_id(self, post_id: int) -> tuple[RowType] | None:
+        """Возвращает строку поста(или None, если пост не найден)"""
+        rows = self.session.select(PostsQueries.SELECT_BY_ID, (post_id,))
+        return rows[0] if rows else None  # type: ignore
 
-        Args:
-            id (int): Идентификатор поста (ID).
+    def insert(self, params: tuple) -> int | Any | None:
+        """Вставляет пост по набору параметров, возвращает id."""
+        return self.session.execute(PostsQueries.INSERT, params)
 
-        Returns:
-            list[tuple | None]: Результат запроса в виде списка кортежей,
-                каждый кортеж содержит (post_title, post_content, post_status).
-                Если пост не найден, возвращается пустой список.
-        """
-        query = """
-            SELECT post_title, post_content, post_status FROM wp_posts
-            WHERE ID = %s
-        """
-        result = self.db.select(query, (id,))
-        return result
+    def delete(self, post_id: int) -> None:
+        """Удаляет пост по id."""
+        self.session.execute(PostsQueries.DELETE, (post_id,))
