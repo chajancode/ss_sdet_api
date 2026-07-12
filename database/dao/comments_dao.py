@@ -15,7 +15,7 @@ class CommentsDao:
     def __init__(self, session: DatabaseSession) -> None:
         self.session = session
 
-    def get_by_id(
+    def select_by_id(
             self, comment_id: int
     ) -> list[RowType | dict[str, RowItemType]] | Any:
         """
