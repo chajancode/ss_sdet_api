@@ -1,6 +1,7 @@
 from typing import Type, TypeVar
 
 from pydantic import BaseModel
+import allure
 
 from api.endpoints import WordPressEndpoints as wpe
 from database.repositories.posts_repository import PostsRepository
@@ -59,6 +60,7 @@ class PostsService(BaseService):
             return None
         return self.repository.get_by_id(post_id)
 
+    @allure.step('Создать пост через API и проверить в БД')
     def check_post_creation(self, test_data: dict):
         """
         Создаёт пост через API и проверяет результат в БД.
@@ -83,6 +85,7 @@ class PostsService(BaseService):
             db_record=self._get_db_record(self._last_created_id)
         )
 
+    @allure.step('Отредактировать пост через API (id={id}) и проверить в БД')
     def check_post_patching(self, id: int, test_data: dict):
         """
         Обновляет пост через API по переданному id и сверяет с БД.
@@ -109,6 +112,7 @@ class PostsService(BaseService):
             db_record=self._get_db_record(id)
         )
 
+    @allure.step('Удалить пост через API (id={id}), проверить отсутствие в БД')
     def check_post_deletion(self, id: int, test_data: dict):
         """
         Удаляет пост через API по переданному id и проверяет отсутствие в БД.

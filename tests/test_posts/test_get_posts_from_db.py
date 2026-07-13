@@ -1,3 +1,4 @@
+import allure
 import pytest
 
 from models.posts.api_responses_models import FullAPIResponse, WordPressError
@@ -7,7 +8,11 @@ from models.posts.posts_model import PostCreatedOrPatchedResponse
 from utils.string_utils import strip_html
 
 
+@allure.epic('WordPress API')
+@allure.feature('Получение данных + тест-данные в БД')
 class TestGetPostsFromDB:
+    @allure.story('Список постов')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize('post_creation_params', [
         {'amount': 5, 'status': 'publish'}
     ], indirect=True)
@@ -25,6 +30,8 @@ class TestGetPostsFromDB:
             assert strip_html(api_post.content.rendered) == expected.content
             assert api_post.status == expected.status
 
+    @allure.story('Получение поста по id')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize('post_creation_params', [
         {'amount': 1, 'status': 'publish'}
     ], indirect=True)
@@ -41,6 +48,8 @@ class TestGetPostsFromDB:
             assert strip_html(api_post.content.rendered) == expected.content
             assert api_post.status == expected.status
 
+    @allure.story('Попытка получить несуществующий пост')
+    @allure.severity(allure.severity_level.MINOR)
     def test_get_post_not_exists(
             self,
             post_doesnt_exist: FullAPIResponse[
@@ -52,6 +61,8 @@ class TestGetPostsFromDB:
         assert post_doesnt_exist.error.message == 'Неверный ID записи.'
         assert post_doesnt_exist.error.data.status == 404
 
+    @allure.story('Фильтрация постов по статусу')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize('get_filtered_post', [
         {'status': 'publish'},
         {'status': 'draft'}

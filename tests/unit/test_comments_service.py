@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import allure
+
 from models.comments.db_record_model import DBCommentData
 from services.comments_service import CommentsService
 from models.comments.comments_model import (
@@ -7,6 +9,11 @@ from models.comments.comments_model import (
     CommentDeletedResponse,
     Content,
 )
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Сервисы'),
+]
 
 
 class FakeCommentsRepository:

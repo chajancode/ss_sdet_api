@@ -1,9 +1,15 @@
+import allure
 import pytest
 
 from database.repositories.posts_repository import PostsRepository
 from models.posts.db_record_model import DBPostData
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from utils.string_utils import to_slug
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Репозитории'),
+]
 
 
 class FakePostsDao:

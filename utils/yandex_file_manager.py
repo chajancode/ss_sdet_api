@@ -1,6 +1,7 @@
 import logging
 
 from typing import Optional, Type, TypeVar
+import allure
 from pydantic import BaseModel
 import requests
 from models.posts.api_responses_models import FullAPIResponse
@@ -33,11 +34,11 @@ class YandexFileManager:
         logger.info(f'-> PUT {upload_url} (upload {local_path})')
         try:
             with open(local_path, 'rb') as file:
-
-                response = requests.put(
-                    url=upload_url,
-                    data=file
-                )
+                with allure.step(f'PUT {upload_url}'):
+                    response = requests.put(
+                        url=upload_url,
+                        data=file
+                    )
         except Exception as e:
             logger.error(f'Ошибка загрузки {local_path} -> {upload_url}: {e}')
             return FullAPIResponse(
@@ -90,7 +91,8 @@ class YandexFileManager:
 
         logger.info(f'-> GET {download_link} (download to {filename})')
         try:
-            response = requests.get(url=download_link, headers=headers)
+            with allure.step(f'GET {download_link}'):
+                response = requests.get(url=download_link, headers=headers)
         except Exception as e:
             logger.error(f'Ошибка скачивания {download_link}: {e}')
             return FullAPIResponse(

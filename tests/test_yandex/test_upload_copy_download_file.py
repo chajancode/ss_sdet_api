@@ -1,3 +1,5 @@
+import allure
+
 from services.yandex_service import YandexService
 from tests.test_yandex.assertions.assertions import (
                                     YandexError,
@@ -6,8 +8,11 @@ from tests.test_yandex.assertions.assertions import (
 from utils.file_tools import create_text_file, remove_text_file
 
 
+@allure.epic('Yandex.Disk API')
+@allure.feature('Полная валидация файлов')
 class TestUploadCopyDownloadFile:
-
+    @allure.story('Загрузка и копирование файла')
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_upload_and_copy_file(
             self,
             yandex_service: YandexService
@@ -58,6 +63,8 @@ class TestUploadCopyDownloadFile:
         yandex_service.delete_folder_if_exists(output_folder)
         remove_text_file(filename)
 
+    @allure.story('Скачивание файла')
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_download_file(
             self,
             yandex_service: YandexService

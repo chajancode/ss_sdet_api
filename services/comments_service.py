@@ -1,3 +1,5 @@
+import allure
+
 from api.endpoints import WordPressEndpoints as wpe
 from database.repositories.comments_repository import CommentsRepository
 from models.comments.comment_service_response_model import (
@@ -53,6 +55,7 @@ class CommentsService(BaseService):
             return None
         return self.repository.get_by_id(comment_id)
 
+    @allure.step('Создать комментарий через API и проверить в БД')
     def check_comment_creation(self, test_data: dict):
         """
         Создаёт комментарий через API и проверяет результат в БД.
@@ -77,6 +80,9 @@ class CommentsService(BaseService):
             db_record=self._get_db_record(self._last_created_id)
         )
 
+    @allure.step(
+            'Отредактировать последний созданный комментарий и проверить в БД'
+    )
     def check_comment_patching(self, test_data: dict):
         """
         Обновляет последний созданный комментарий через API и сверяет с БД.
@@ -105,6 +111,10 @@ class CommentsService(BaseService):
             db_record=self._get_db_record(self._last_created_id)
         )
 
+    @allure.step(
+            'Удалить последний созданный комментарий и '
+            'проверить отсутствие в БД'
+    )
     def check_comment_deletion(self, test_data: dict):
         """
         Удаляет последний созданный комментарий через API \

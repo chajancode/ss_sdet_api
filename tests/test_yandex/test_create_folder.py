@@ -1,3 +1,5 @@
+import allure
+
 from services.yandex_service import YandexService
 from utils.data_generators import GenerateRandomTexts
 from tests.test_yandex.assertions.assertions import (
@@ -7,7 +9,11 @@ from tests.test_yandex.assertions.assertions import (
                                 )
 
 
+@allure.epic('Yandex.Disk API')
+@allure.feature('Управление папками')
 class TestCreateFolder:
+    @allure.story('Создание папки')
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_create_folder(
             self,
             yandex_service: YandexService
@@ -19,6 +25,8 @@ class TestCreateFolder:
 
         yandex_service.delete_folder(permanently=True, params=params)
 
+    @allure.story('Создание папки с path=/')
+    @allure.severity(allure.severity_level.MINOR)
     def test_create_folder_with_slash(
             self,
             yandex_service: YandexService
@@ -28,6 +36,8 @@ class TestCreateFolder:
 
         assert_api_error(result, 409, YandexError.PATH_DOESNT_EXIST)
 
+    @allure.story('Создание папки без имени')
+    @allure.severity(allure.severity_level.MINOR)
     def test_create_folder_without_folder_name(
             self,
             yandex_service: YandexService
@@ -36,6 +46,8 @@ class TestCreateFolder:
 
         assert_api_error(result, 400, YandexError.FIELD_VALIDATION)
 
+    @allure.story('Создание уже существующей папки')
+    @allure.severity(allure.severity_level.NORMAL)
     def test_create_folder_with_existing_folder_name(
             self,
             yandex_service: YandexService

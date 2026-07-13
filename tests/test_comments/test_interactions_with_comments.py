@@ -1,4 +1,5 @@
 import pytest
+import allure
 
 from data_for_tests.test_data_creator import data_creator
 from data_for_tests.test_data_models import (
@@ -9,7 +10,11 @@ from data_for_tests.test_data_models import (
 from services.comments_service import CommentsService
 
 
+@allure.epic('WordPress API')
+@allure.feature('CRUD постов и комментариев')
 class TestInteractWithComments:
+    @allure.story('Создание комментария')
+    @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.parametrize(
             'comm_create', data_creator('comms_create')
     )
@@ -26,6 +31,8 @@ class TestInteractWithComments:
         assert res.db_record.content == comm_create.content
         assert res.db_record.post == comm_create.post
 
+    @allure.story('Редактирование комментария')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize(
             'comm_patch', data_creator('comms_patch')
     )
@@ -40,6 +47,8 @@ class TestInteractWithComments:
         assert res.response_body.content.raw == comm_patch.content
         assert res.db_record.content == comm_patch.content
 
+    @allure.story('Удаление комментария')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize(
             'comm_delete', data_creator('comms_delete')
     )

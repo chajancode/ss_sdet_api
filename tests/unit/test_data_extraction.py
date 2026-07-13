@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 
+import allure
+
 from utils.data_extraction import extract_deleted_folder_path_from_trash
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Утилиты'),
+]
 
 
 @dataclass

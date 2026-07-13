@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 
+import allure
+
 from utils.dict_creation import group_by_status
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Утилиты'),
+]
 
 
 @dataclass

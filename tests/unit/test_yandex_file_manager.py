@@ -1,4 +1,11 @@
+import allure
+
 from utils.yandex_file_manager import YandexFileManager
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Утилиты'),
+]
 
 
 def test_compare_files_equal(tmp_path):

@@ -1,5 +1,7 @@
 from typing import Optional
 
+import allure
+
 from api.api_client import APIClient
 from api.endpoints import YandexEndpoints as ye
 from models.posts.api_responses_models import FullAPIResponse
@@ -50,6 +52,7 @@ class YandexService:
             error_model=YandexApiError
         )
 
+    @allure.step('Получить данные авторизованного пользователя')
     def get_authorized_user(self):
         """
         Возвращает данные авторизованного пользователя Яндекс-Диска.
@@ -65,6 +68,7 @@ class YandexService:
             headers=self.headers
         )
 
+    @allure.step('Получить данные пользователя без токена')
     def get_unauthorized_user(
             self
     ) -> FullAPIResponse[GetUserDataResponse, YandexApiError]:
@@ -79,6 +83,7 @@ class YandexService:
             response_model=GetUserDataResponse
         )  # type: ignore
 
+    @allure.step('Создать папку (params={params})')
     def create_folder(
             self,
             params: Optional[dict] = None
@@ -100,6 +105,7 @@ class YandexService:
             url=ye.DISK_RESOURCES
         )  # type: ignore
 
+    @allure.step('Удалить папку (params={params}, permanently={permanently})')
     def delete_folder(
             self,
             permanently: bool = False,
@@ -220,6 +226,7 @@ class YandexService:
             url=ye.DISK_TRASH_RESTORE
         )  # type: ignore
 
+    @allure.step('Восстановить удалённую папку (params={params})')
     def restore_deleted_folder(
             self,
             params: dict
@@ -237,6 +244,7 @@ class YandexService:
         folder_name = self.is_folder_in_trash(params=params)
         return self._restore({'path': folder_name})
 
+    @allure.step('Восстановить несуществующую папку (params={params})')
     def restore_folder_doesnt_exist(
             self,
             params: dict
@@ -262,6 +270,7 @@ class YandexService:
             url=ye.DISK_TRASH
         )
 
+    @allure.step('Запросить ссылку для загрузки (params={params})')
     def request_upload_link(
             self,
             params: dict
@@ -283,6 +292,7 @@ class YandexService:
             url=ye.DISK_UPLOAD
         )  # type: ignore
 
+    @allure.step('Загрузить файл {path_to_local_file} по ссылке')
     def upload_file(
             self,
             path_to_local_file: str,
@@ -305,6 +315,7 @@ class YandexService:
         )
         return response  # type: ignore
 
+    @allure.step('Скопировать файл из {copy_from} в {copy_to}')
     def copy_file(
             self,
             copy_from: str,
@@ -331,6 +342,7 @@ class YandexService:
             url=ye.DISK_COPY
         )  # type: ignore
 
+    @allure.step('Получить метаданные файла {path}')
     def get_file_by_path(
             self,
             path: str
@@ -363,6 +375,7 @@ class YandexService:
         if self.check_folder_exists(params):
             self.delete_folder(True, params)
 
+    @allure.step('Запросить ссылку для скачивания (params={path_to_file})')
     def request_download_link(
             self,
             path_to_file: dict
@@ -384,6 +397,7 @@ class YandexService:
             url=ye.DISK_DOWNLOAD
         )  # type: ignore
 
+    @allure.step('Скачать файл по ссылке в {filename}')
     def download_file(
             self,
             download_link: str,
@@ -425,6 +439,7 @@ class YandexService:
             downloaded_filename
         )
 
+    @allure.step('Получить список файлов (params={params})')
     def get_files_list(
             self,
             params: Optional[dict] = None
