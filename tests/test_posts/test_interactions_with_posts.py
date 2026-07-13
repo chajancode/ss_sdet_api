@@ -1,4 +1,5 @@
 import pytest
+import allure
 
 from services.posts_service import PostsService
 from data_for_tests.test_data_creator import data_creator
@@ -9,7 +10,11 @@ from data_for_tests.test_data_models import (
                             )
 
 
+@allure.epic('WordPress API')
+@allure.feature('CRUD постов и комментариев')
 class TestInteractWithPosts:
+    @allure.story('Создание поста')
+    @allure.severity(allure.severity_level.CRITICAL)
     @pytest.mark.parametrize(
             'post_create', data_creator('post_create')
     )
@@ -25,6 +30,8 @@ class TestInteractWithPosts:
         assert res.db_record.content == post_create.content
         assert res.db_record.status == post_create.status
 
+    @allure.story("Редактирование поста")
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize(
             'post_patch', data_creator('post_patch')
     )
@@ -43,6 +50,8 @@ class TestInteractWithPosts:
         assert res.db_record.title == post_patch.title
         assert res.db_record.content == post_patch.content
 
+    @allure.story("Удаление поста")
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize(
             'post_delete', data_creator('post_delete')
     )

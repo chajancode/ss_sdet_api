@@ -1,3 +1,4 @@
+import allure
 from jsonschema import validate
 
 from schemas.file_list_schema import file_list_schema
@@ -5,7 +6,11 @@ from services.yandex_service import YandexService
 from utils.file_tools import create_text_file, remove_text_file
 
 
+@allure.epic('Yandex.Disk API')
+@allure.feature('JSON Schema Validation')
 class TestGetFilesList:
+    @allure.story('Получение списка файлов')
+    @allure.severity(allure.severity_level.NORMAL)
     def test_get_files_list(
             self, yandex_service: YandexService
     ):

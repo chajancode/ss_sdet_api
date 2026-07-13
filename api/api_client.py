@@ -1,6 +1,7 @@
 import logging
 from typing import IO, List, Optional, Type, TypeVar, Union
 
+import allure
 from pydantic import BaseModel, TypeAdapter
 from requests import Response, Session
 from requests.auth import HTTPBasicAuth
@@ -130,16 +131,16 @@ class APIClient:
         logger.info(f'-> {method} {url}')
         if params:
             logger.debug(f'params: {params}')
-
-        response = self.session.request(
-            method=method,
-            url=url,
-            json=json,
-            params=params,
-            auth=self.auth,
-            headers=headers,
-            data=data
-        )
+        with allure.step(f'{method} {url}'):
+            response = self.session.request(
+                method=method,
+                url=url,
+                json=json,
+                params=params,
+                auth=self.auth,
+                headers=headers,
+                data=data
+            )
         if 200 <= response.status_code < 300:
             logger.info(f'<- {response.status_code} {method} {url}')
             try:
@@ -153,8 +154,8 @@ class APIClient:
                 raise RuntimeError(f'Ошибка парсинга ответа: {e}') from e
         else:
             logger.warning(
-                f'<- {response.status_code} {method} \
-                    {url}: {response.text[:200]}'
+                f'<- {response.status_code} {method} '
+                f'{url}: {response.text[:200]}'
             )
             parsed_body = None
             error = self._parse_error(response, error_model)  # type: ignore
@@ -389,13 +390,14 @@ class APIClient:
 
         logger.info(f'-> GET (many) {self.endpoint}')
 
-        response = self.session.request(
-            method='GET',
-            url=self.endpoint,
-            params=params,
-            auth=self.auth,
-            headers=self.headers
-        )
+        with allure.step(f'GET (many) {self.endpoint}'):
+            response = self.session.request(
+                method='GET',
+                url=self.endpoint,
+                params=params,
+                auth=self.auth,
+                headers=self.headers
+            )
         if 200 <= response.status_code < 300:
             logger.info(
                 f'<- {response.status_code} GET (many) {self.endpoint}'

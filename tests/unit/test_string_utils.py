@@ -1,6 +1,12 @@
 import pytest
+import allure
 
 from utils.string_utils import to_slug, strip_html
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Утилиты'),
+]
 
 
 @pytest.mark.parametrize(

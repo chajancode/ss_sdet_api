@@ -1,10 +1,17 @@
 from types import SimpleNamespace
 
+import allure
+
 from models.posts.db_record_model import DBPostData
 from models.posts.posts_model import (
                     PostCreatedOrPatchedResponse, Content, Title
 )
 from services.posts_service import PostsService
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Сервисы'),
+]
 
 
 class FakePostsRepository:

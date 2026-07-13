@@ -1,4 +1,11 @@
+import allure
+
 from utils.file_tools import create_text_file, remove_text_file
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Утилиты'),
+]
 
 
 def test_create_text_file(tmp_path):

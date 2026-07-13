@@ -1,6 +1,13 @@
+import allure
+
 from models.comments.comms_create_and_response_dbc import ExpectedCommModel
 from models.posts.post_create_and_response_dbc import ExpectedPostModel
 from utils.data_generators import GenerateExpectedItem
+
+pytestmark = [
+    allure.epic('Unit-тесты фреймворка'),
+    allure.feature('Утилиты'),
+]
 
 
 class TestGeneratePosts:

@@ -1,3 +1,4 @@
+import allure
 import pytest
 
 from models.comments.comments_fixtures_results import FilteredCommsResult
@@ -7,8 +8,11 @@ from models.posts.api_responses_models import FullAPIResponse, WordPressError
 from utils.string_utils import strip_html
 
 
+@allure.epic('WordPress API')
+@allure.feature('Получение данных + тест-данные в БД')
 class TestGetCommsFromDB:
-
+    @allure.story('Получение списка комментариев')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize('post_creation_params, comment_creation_params', [
         (
             {'amount': 1, 'status': 'publish'},
@@ -29,6 +33,8 @@ class TestGetCommsFromDB:
             assert api_comm.post == expected.post_id
             assert api_comm.status == expected.status
 
+    @allure.story('Получение комментария по id')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize('post_creation_params, comment_creation_params', [
         (
             {'amount': 1, 'status': 'publish'},
@@ -52,6 +58,8 @@ class TestGetCommsFromDB:
                                             ) == expected.content
         assert response.response_body.status == expected.status
 
+    @allure.story('Попытка получить несуществующий комментарий')
+    @allure.severity(allure.severity_level.MINOR)
     def test_get_comm_not_exists(
             self,
             comm_doesnt_exist: FullAPIResponse[
@@ -63,6 +71,8 @@ class TestGetCommsFromDB:
         assert comm_doesnt_exist.error.message == 'Неверный ID комментария.'
         assert comm_doesnt_exist.error.data.status == 404
 
+    @allure.story('Фильтрация комментариев по статусу')
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize(
         'post_creation_params, get_filtered_comm, comment_creation_params', [(
             {'amount': 1, 'status': 'publish'},
