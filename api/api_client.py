@@ -1,3 +1,4 @@
+import logging
 from typing import IO, List, Optional, Type, TypeVar, Union
 
 from pydantic import BaseModel, TypeAdapter
@@ -5,6 +6,8 @@ from requests import Response, Session
 from requests.auth import HTTPBasicAuth
 
 from models.posts.api_responses_models import FullAPIResponse
+
+logger = logging.getLogger(__name__)
 
 M = TypeVar('M', bound=BaseModel)
 E = TypeVar('E', bound=BaseModel)
@@ -46,6 +49,10 @@ class APIClient:
         self.auth = auth
         self.headers = headers
         self.error_model = error_model
+        logger.debug(
+            f'APIClient создан: endpoint={endpoint}, '
+            f'auth={"True" if auth else "False"}, error_model={error_model}'
+        )
 
     @staticmethod
     def _parse_error(
@@ -73,8 +80,8 @@ class APIClient:
             return error_model(**response.json())
         except Exception as e:
             raise RuntimeError(
-                f"Ошибка парсинга тела ошибки "
-                f"(статус {response.status_code}): {response.text!r}"
+                f'Ошибка парсинга тела ошибки '
+                f'(статус {response.status_code}): {response.text!r}'
             ) from e
 
     def _request(
@@ -120,6 +127,10 @@ class APIClient:
         if url is None:
             url = f'{self.endpoint}/{id}' if id is not None else self.endpoint
 
+        logger.info(f'-> {method} {url}')
+        if params:
+            logger.debug(f'params: {params}')
+
         response = self.session.request(
             method=method,
             url=url,
@@ -130,6 +141,7 @@ class APIClient:
             data=data
         )
         if 200 <= response.status_code < 300:
+            logger.info(f'<- {response.status_code} {method} {url}')
             try:
                 if response.status_code == 204 or not response.text:
                     parsed_body = None
@@ -137,8 +149,13 @@ class APIClient:
                     parsed_body = response_model(**response.json())
                 error = None
             except Exception as e:
-                raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
+                logger.error(f'Ошибка парсинга ответа {url}: {e}')
+                raise RuntimeError(f'Ошибка парсинга ответа: {e}') from e
         else:
+            logger.warning(
+                f'<- {response.status_code} {method} \
+                    {url}: {response.text[:200]}'
+            )
             parsed_body = None
             error = self._parse_error(response, error_model)  # type: ignore
 
@@ -369,6 +386,9 @@ class APIClient:
         """
         if error_model is None:
             error_model = self.error_model  # type: ignore
+
+        logger.info(f'-> GET (many) {self.endpoint}')
+
         response = self.session.request(
             method='GET',
             url=self.endpoint,
@@ -377,10 +397,17 @@ class APIClient:
             headers=self.headers
         )
         if 200 <= response.status_code < 300:
+            logger.info(
+                f'<- {response.status_code} GET (many) {self.endpoint}'
+            )
             parsed_body = TypeAdapter(
                 List[response_model]).validate_python(response.json())
             error = None
         else:
+            logger.warning(
+                f'<- {response.status_code} GET {self.endpoint} (many): '
+                f'{response.text[:200]}'
+            )
             parsed_body = []
             error = self._parse_error(response, error_model)
         return FullAPIResponse(

@@ -1,5 +1,5 @@
 import pytest
-
+import logging
 
 from config.credentials import API_USERNAME, API_PASSWORD
 from config.db_config import db_settings
@@ -12,6 +12,11 @@ pytest_plugins = [
     'tests.fixtures.comments_fixtures',
     'tests.fixtures.yandex_fixtures'
 ]
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
 
 
 @pytest.fixture(scope='session')

@@ -1,4 +1,9 @@
+import logging
+
 from config.db_config import DBSettings, create_mysql_connection
+
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseSession:
@@ -10,17 +15,22 @@ class DatabaseSession:
         self.conn.autocommit = True  # type: ignore
 
     def execute(self, query: str, params: tuple = ()):
+        logger.debug(f'SQL execute: {query.strip()} | params: {params}')
         with self.conn.cursor() as cursor:
             try:
                 cursor.execute(query, params)
             except Exception as e:
+                logger.error(f'Ошибка SQL-запроса: {e} | {query.strip()}')
                 raise RuntimeError(f'Ошибка при запросe: {e}') from e
         return cursor.lastrowid
 
     def select(self, query: str, params: tuple = ()):
+        logger.debug(f'SQL select: {query.strip()} | params: {params}')
         with self.conn.cursor() as cursor:
             cursor.execute(query, params)
-            return cursor.fetchall()
+            rows = cursor.fetchall()
+            logger.debug(f'Cursor вернул {len(rows)} строк')
+            return rows
 
     def commit(self):
         self.conn.commit()
