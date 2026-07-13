@@ -19,7 +19,7 @@ class CommentsRepository:
         """
         Возвращает комментарий как доменную модель (или None).
         """
-        row = self.dao.get_by_id(comment_id)
+        row = self.dao.select_by_id(comment_id)
         if row is None:
             return None
         return self._row_to_model(row)  # type: ignore

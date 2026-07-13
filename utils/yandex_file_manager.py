@@ -1,9 +1,13 @@
+import logging
+
 from typing import Optional, Type, TypeVar
 from pydantic import BaseModel
 import requests
 from models.posts.api_responses_models import FullAPIResponse
 from models.yandex.api_error_models import YandexApiError
 from models.yandex.success_api_response_models import SuccessApiResponse
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -26,13 +30,16 @@ class YandexFileManager:
         """
         parsed_body = None
 
+        logger.info(f'-> PUT {upload_url} (upload {local_path})')
         try:
             with open(local_path, 'rb') as file:
+
                 response = requests.put(
                     url=upload_url,
                     data=file
                 )
         except Exception as e:
+            logger.error(f'Ошибка загрузки {local_path} -> {upload_url}: {e}')
             return FullAPIResponse(
                 status_code=500,
                 response_body=None,
@@ -43,6 +50,7 @@ class YandexFileManager:
             )
 
         if 200 <= response.status_code < 300:
+            logger.info(f'<- {response.status_code} PUT {upload_url}')
             try:
                 if response.status_code == 204 or not response.text:
                     parsed_body = None
@@ -50,9 +58,16 @@ class YandexFileManager:
                     parsed_body = response_model(**response.json())
                 error = None
             except Exception as e:
+                logger.error(
+                    f'Ошибка загрузки {local_path} -> {upload_url}: {e}'
+                )
                 parsed_body = None
                 raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
         else:
+            logger.warning(
+                f'<- {response.status_code} PUT {upload_url}: '
+                f'{response.text[:200]}'
+            )
             parsed_body = None
             error = error_model(**response.json())
 
@@ -73,9 +88,11 @@ class YandexFileManager:
         parsed_body = None
         error = None
 
+        logger.info(f'-> GET {download_link} (download to {filename})')
         try:
             response = requests.get(url=download_link, headers=headers)
         except Exception as e:
+            logger.error(f'Ошибка скачивания {download_link}: {e}')
             return FullAPIResponse(
                 status_code=500,
                 response_body=None,
@@ -87,10 +104,12 @@ class YandexFileManager:
             )  # type: ignore
 
         if response.status_code in (200, 302):
+            logger.info(f'<- {response.status_code} GET {download_link}')
             try:
                 with open(filename, 'w') as file:
                     file.write(response.text)
             except Exception as e:
+                logger.error(f'Ошибка скачивания {download_link}: {e}')
                 return FullAPIResponse(
                     status_code=500,
                     response_body=None,
@@ -108,6 +127,10 @@ class YandexFileManager:
                 raise RuntimeError(f"Ошибка парсинга ответа: {e}") from e
 
         else:
+            logger.warning(
+                f'<- {response.status_code} GET {download_link}: '
+                f'{response.text[:200]}'
+            )
             parsed_body = None
             error = error_model(**response.json())
 
